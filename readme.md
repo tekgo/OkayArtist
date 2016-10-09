@@ -2,7 +2,7 @@
 
 'Okay Artist' is a javascript port of the controls and effects of sketchpad mode from 'BECOME A GREAT ARTIST IN JUST 10 SECONDS' by Andi McClure and Michael Brough. It is intended to work on modern desktop and mobile browsers.
 
-It can be played at http://tekgo.github.com/OkayArtist/ 
+It can be played at http://tekgo.github.io/OkayArtist/ 
 
 If you notice any bugs or it doesn't work correctly on your device please open up an issue or email pat@tekgo.org
 
