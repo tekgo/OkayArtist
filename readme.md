@@ -13,6 +13,7 @@ If you notice any bugs or it doesn't work correctly on your device please open u
 > The contents of this repository are made available to you under the following license.
 > 
 > Copyright (C) 2013 by Andi McClure and Michael Brough
+>
 > Copyright (C) 2016 by Patrick Winchell
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
