@@ -1,2 +1,0 @@
-# OkayArtist
-Art Tool.
