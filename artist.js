@@ -286,6 +286,7 @@ Artsy.update = function() {
 	var copy = ImgFuncs.copyData(Artsy.state.imageData);
 
 	Artsy.state = Artsy.franIt(Artsy.state);
+	ImgFuncs.addBufferToImageData(Artsy.state.imageData);
 
 	var actions = Artsy.allActions;
 	for (var i = 0; i < actions.length; ++i) {
@@ -387,7 +388,7 @@ Artsy.update = function() {
 	// Color the keys yellow if a key is being pressed.
 	if (ImgFuncs.boardData && Artsy.keyboard) {
 		var btx = Artsy.keyboard.getContext('2d');
-		btx.putImageData(ImgFuncs.boardData, 0, 0);
+		btx.drawImage(ImgFuncs.board, 0, 0);
 		btx.fillStyle = "rgba(255,255,127,0.5)";
 
 		for (var i = 0; i < touchKeys.length; ++i) {
@@ -637,13 +638,17 @@ Gallery.displayGallery = function() {
 	}
 
 	for (var i = 0; i < images.length; ++i) {
+		var linkTag = null;
+		var j = i;
 		var imgTag = document.createElement("img")
-		imgTag.src = images[i];
+		var url = images[i];
+		url =ImgFuncs.toDataURL(ImgFuncs.scaleImageData(ImgFuncs.fromDataURL(url), 4));
+		imgTag.src = url;
 		imgTag.setAttribute("download","img.png");
 		if(native) {
 			// On native iOS the img callout doesn't work, so link to the image elsewhere.
 			var linkTag = document.createElement("a");
-			linkTag.setAttribute("href","http://superpartyawesome.com/things/imageDisplay/#"+images[i]);
+			linkTag.setAttribute("href","http://superpartyawesome.com/things/imageDisplay/#"+url);
 			linkTag.appendChild(imgTag);
 			linkTag.setAttribute("target","_blank");
 			linkTag.setAttribute("rel","external");
@@ -675,7 +680,8 @@ Artsy.actions = {}
 Artsy.actions.greyFill = {
 	name: "Random greyscale fill",
 	action: function(state) {
-		var output = new ImageData(state.imageData.width, state.imageData.height)
+		var output = new ImageData(state.imageData.width, state.imageData.height);
+		ImgFuncs.addBufferToImageData(output);
 		var r = Math.floor(32 * Math.random()) * 8;
 		var g = Math.floor(32 * Math.random()) * 8;
 		var b = Math.floor(32 * Math.random()) * 8;
@@ -955,19 +961,19 @@ Artsy.actions.magic = {
 		var output = state.imageData
 		for (var x = 0; x < output.width; ++x) {
 			for (var y = 0; y < output.height; ++y) {
-				var rgb1 = ImgFuncs.getColorArr(output, x, y);
-				if(rgb1[0] > 32) {
-					var rgb2 = ImgFuncs.getColorArr(output, underflowMod(x-1,output.width), y);
-					rgb2[0] = Math.floor((rgb1[0] + rgb2[0]) / 2);
-					ImgFuncs.setColorArr(output, underflowMod(x-1,output.width), y, rgb2);
+				var r1 = ImgFuncs.getColorC(output, x, y, 0);
+				if(r1 > 32) {
+					var r2 = ImgFuncs.getColorC(output, underflowMod(x-1,output.width), y,0);
+					r2 = Math.floor((r1 + r2) / 2);
+					ImgFuncs.setColorC(output, underflowMod(x-1,output.width), y, 0, r2);
 
-					var rgb3 = ImgFuncs.getColorArr(output, underflowMod(x+1,output.width), underflowMod(y+1,output.height));
-					++rgb3[0];
-					ImgFuncs.setColorArr(output, underflowMod(x+1,output.width), underflowMod(y+1,output.height), rgb3);
+					var r3 = ImgFuncs.getColorC(output, underflowMod(x+1,output.width), underflowMod(y+1,output.height), 0);
+					++r3;
+					ImgFuncs.setColorC(output, underflowMod(x+1,output.width), underflowMod(y+1,output.height), 0, r3);
 
-					var rgb4 = ImgFuncs.getColorArr(output, underflowMod(x+1,output.width), underflowMod(y-1,output.height));
-					++rgb4[0];
-					ImgFuncs.setColorArr(output, underflowMod(x+1,output.width), underflowMod(y-1,output.height), rgb4);
+					var r4 = ImgFuncs.getColorC(output, underflowMod(x+1,output.width), underflowMod(y-1,output.height), 0);
+					++r4;
+					ImgFuncs.setColorC(output, underflowMod(x+1,output.width), underflowMod(y-1,output.height), 0, r4);
 				}
 			}
 		}
@@ -1051,20 +1057,22 @@ Artsy.actions.SDL_SCANCODE_U = {
 			var __i = max - _i;
 			return {x: __i % w, y: Math.floor(__i / w)};
 		}
-		function swap(a,b){ return {a: a, b: b} }
-		function unswap(a,b){ return {a: b, b: a} }
 		function pass(idxf, swapf) {
 			var pt = idxf(1);
 			var x2 = pt.x;
 			var y2 = pt.y;
 			var c2 = ImgFuncs.getColorArr(output, x2, y2);
+			var x1 = x2;
+			var y1 = y2;
+			var pt2 = idxf(i+1)
+			var c1 = c2;
 			for (var i = 1; i < max-1; ++i) {
-				var x1 = x2;
-				var y1 = y2;
-				var pt2 = idxf(i+1)
+				x1 = x2;
+				y1 = y2;
+				pt2 = idxf(i+1)
 				x2 = pt2.x;
 				y2 = pt2.y;
-				var c1 = c2;
+				c1 = c2;
 				c2 = ImgFuncs.getColorArr(output, x2, y2);
 				var colors = swapf(ImgFuncs.lesser(c1,c2), ImgFuncs.greater(c1,c2));
 				var less = colors.a;
@@ -1075,8 +1083,8 @@ Artsy.actions.SDL_SCANCODE_U = {
 			}
 		}
 		for (var im = 1; im <= 4; ++im) {
-			pass(idx, swap);
-			pass(unidx, unswap);				
+			pass(idx, ImgFuncs.swap);
+			pass(unidx, ImgFuncs.unswap);				
 		}
 		state.imageData = output;
 		return state;
@@ -1197,13 +1205,16 @@ Artsy.actions.SDL_SCANCODE_B = {
 			var x2 = pt.x;
 			var y2 = pt.y;
 			var c2 = ImgFuncs.getColor32(output, x2, y2);
+			var x1 = x2;
+			var y1 = y2;
+			var c1 = c2;
 			for (var i = 1; i < max-1; ++i) {
-				var x1 = x2;
-				var y1 = y2;
 				var pt2 = idxf(i+1)
+				x1 = x2;
+				y1 = y2;
+				c1 = c2;
 				x2 = pt2.x;
 				y2 = pt2.y;
-				var c1 = c2;
 				c2 = ImgFuncs.getColor32(output, x2, y2);
 				if (cmpf(c1,c2) == true) {
 					ImgFuncs.setColor32(output, x1, y1, c2);
@@ -2244,76 +2255,85 @@ var ImgFuncs = {}
 
 ImgFuncs.littleEndian = ((new Uint32Array((new Uint8Array([1, 2, 3, 4])).buffer))[0] === 0x04030201)
 
+if(ImgFuncs.littleEndian == true) {
+	ImgFuncs.fixEndian = function(number) {
+		return ((number >> 24) & 0xff) | // move byte 3 to byte 0
+			((number << 8) & 0xff0000) | // move byte 1 to byte 2
+			((number >> 8) & 0xff00) | // move byte 2 to byte 1
+			((number << 24) & 0xff000000); // byte 0 to byte 3
+	}
+}
+else {
+	ImgFuncs.fixEndian = function(number) {
+		return number;
+	}
+}
+
 // Gets a u32 for an x,y coord.
 ImgFuncs.getColor32 = function(imageData, x, y) {
-	var u8 = imageData.u8;
-	if(!u8) {
-		u8 = new Uint8Array(imageData.data.buffer);
-		imageData.u8 = u8;
+	if (imageData.width == 128 && imageData.height == 128) {
+		return ImgFuncs.fixEndian(imageData.u32[((((~~x % 128) + 128) % 128) + (128 * (((~~y % 128) + 128) % 128)))]);
 	}
-	var byteOffset = ((((~~x % imageData.width) + imageData.width) % imageData.width) + (imageData.width * (((~~y % imageData.height) + imageData.height) % imageData.height))) * 4;
-	if (ImgFuncs.littleEndian == true) {
-		return ((u8[byteOffset + 3]) | 
-              (u8[byteOffset + 2] << 8) | 
-              (u8[byteOffset + 1] << 16) | 
-              (u8[byteOffset] << 24))
-	}
-	return ((u8[byteOffset]) | 
-              (u8[byteOffset + 1] << 8) | 
-              (u8[byteOffset + 2] << 16) | 
-              (u8[byteOffset + 3] << 24))
+	var width = imageData.width;
+	var height = imageData.height;
+	var byteOffset = ((((~~x % width) + width) % width) + (width * (((~~y % height) + height) % height)));
+	return ImgFuncs.fixEndian(imageData.u32[byteOffset]);
 }
 
 // Sets a u32 for an x,y coord.
 ImgFuncs.setColor32 = function(imageData, x, y, color) {
-	var byteOffset = ((((~~x % imageData.width) + imageData.width) % imageData.width) + (imageData.width * (((~~y % imageData.height) + imageData.height) % imageData.height)));
+	if (imageData.width == 128 && imageData.height == 128) {
+		imageData.u32[((((~~x % 128) + 128) % 128) + (128 * (((~~y % 128) + 128) % 128)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+		return
+	}
+	var width = imageData.width;
+	var height = imageData.height;
+	var byteOffset = ((((~~x % width) + width) % width) + (width * (((~~y % height) + height) % height)));
+	imageData.u32[byteOffset] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+}
+
+ImgFuncs.addBufferToImageData = function(imageData) {
 	var u32 = imageData.u32;
 	if(!u32) {
 		u32 = new Uint32Array(imageData.data.buffer);
 		imageData.u32 = u32;
 	}
-	if (ImgFuncs.littleEndian == true) {
-		var swapped = ((color >> 24) & 0xff) | // move byte 3 to byte 0
-			((color << 8) & 0xff0000) | // move byte 1 to byte 2
-			((color >> 8) & 0xff00) | // move byte 2 to byte 1
-			((color << 24) & 0xff000000); // byte 0 to byte 3
 
-		u32[byteOffset] = swapped;
-	} else {
-		u32[byteOffset] = color;
+	var u8 = imageData.u8;
+	if(!u8) {
+		u8 = new Uint8ClampedArray(imageData.data.buffer);
+		imageData.u8 = u8;
 	}
-	imageData.data[(byteOffset * 4) + 3] = 255;
 }
 
 // Gets a 3 item array for an x,y coord.
 ImgFuncs.getColorArr = function(imageData, x, y) {
-	var byteOffset = ((((~~x % imageData.width) + imageData.width) % imageData.width) + (imageData.width * (((~~y % imageData.height) + imageData.height) % imageData.height))) * 4;
-	return [imageData.data[byteOffset + 0],  imageData.data[byteOffset + 1], imageData.data[byteOffset + 2]];
+	var color = ImgFuncs.getColor32(imageData,x,y);
+	return [(color >> 24) & 0xff, (color >> (16)) & 0xff, (color >> (8)) & 0xff];
 }
 
 // Gets a 3 item array for an x,y coord.
 ImgFuncs.setColorArr = function(imageData, x, y, color) {
-	var u8 = imageData.u8;
-	if(!u8) {
-		u8 = new Uint8Array(imageData.data.buffer);
-		imageData.u8 = u8;
-	}
-	var byteOffset = ((((~~x % imageData.width) + imageData.width) % imageData.width) + (imageData.width * (((~~y % imageData.height) + imageData.height) % imageData.height))) * 4;
-	u8[byteOffset + 0] = color[0];
-	u8[byteOffset + 1] = color[1];
-	u8[byteOffset + 2] = color[2];
+	ImgFuncs.setColor32(imageData,x,y, (((color[0] & 0xff) << 24) | 
+              ((color[1] & 0xff) << 16) | 
+              ((color[2] & 0xff) << 8) | 
+              (0xff)))
 }
 
 // Gets a channel value for an x,y coord.
 ImgFuncs.getColorC = function(imageData, x, y, c) {
-	var byteOffset = ((((~~x % imageData.width) + imageData.width) % imageData.width) + (imageData.width * (((~~y % imageData.height) + imageData.height) % imageData.height))) * 4;
-	return imageData.data[byteOffset + c];
+	var width = imageData.width;
+	var height = imageData.height;
+	var byteOffset = ((((~~x % width) + width) % width) + (width * (((~~y % height) + height) % height))) * 4;
+	return imageData.u8[byteOffset + c];
 }
 
 // Sets a channel value for an x,y coord.
 ImgFuncs.setColorC = function(imageData, x, y,c, color) {
-	var byteOffset = ((((~~x % imageData.width) + imageData.width) % imageData.width) + (imageData.width * (((~~y % imageData.height) + imageData.height) % imageData.height))) * 4;
-	imageData.data[byteOffset + c] = ((~~color % 256) + 256) % 256;
+	var width = imageData.width;
+	var height = imageData.height;
+	var byteOffset = ((((~~x % width) + width) % width) + (width * (((~~y % height) + height) % height))) * 4;
+	imageData.u8[byteOffset + c] = ((~~color % 256) + 256) % 256;
 }
 
 // Converts a 3 item array to a uint32.
@@ -2475,6 +2495,9 @@ ImgFuncs.greater = function(a, b) {
 	return [Math.max(a[0],b[0]),  Math.max(a[1],b[1]), Math.max(a[2],b[2])];
 }
 
+ImgFuncs.swap = function(a,b){ return {a: a, b: b} }
+ImgFuncs.unswap = function(a,b){ return {a: b, b: a} }
+
 // Returns a dataURL for an imageData object.
 ImgFuncs.toDataURL = function(imageData) {
 	var canvas = document.createElement("canvas");
@@ -2497,7 +2520,22 @@ ImgFuncs.scaleImageData = function(imgDat1, scale) {
             pix2[y * imgDat2.width + x]=pix1[(~~(y/scale)) * imgDat1.width + (~~(x/scale))]
         }
     }
+    ImgFuncs.addBufferToImageData(imgDat2);
     return imgDat2
+}
+
+ImgFuncs.fromImage = function(img) {
+	var canvas = Artsy.createCanvas(img.width, img.height);
+	var ctx = canvas.getContext('2d');
+	ctx.drawImage(img,0,0);
+	var data = ctx.getImageData(0, 0, img.width, img.height);
+	return data;
+}
+
+ImgFuncs.fromDataURL = function(dataURL) {
+	var img = new Image();
+	img.src = dataURL;
+	return ImgFuncs.fromImage(img);
 }
 
 ImgFuncs.flipline = function (surface,x,y) {
@@ -2522,6 +2560,7 @@ ImgFuncs.copyData = function(imageData) {
 	var dataCopy = new Uint8ClampedArray(imageData.data);
 	var copy = new ImageData(imageData.width, imageData.height);
 	copy.data.set(dataCopy);
+	ImgFuncs.addBufferToImageData(copy);
 	return copy;
 }
 
@@ -2581,6 +2620,7 @@ ImgFuncs.font.onload = function() {
 	canvas.height = img.height;
 	context.drawImage(img, 0, 0 );
 	ImgFuncs.fontData = context.getImageData(0, 0, img.width, img.height);
+	ImgFuncs.addBufferToImageData(ImgFuncs.fontData);
 }
 ImgFuncs.font.src = "font8x8.png";
 
