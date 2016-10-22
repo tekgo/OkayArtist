@@ -642,12 +642,12 @@ Gallery.displayGallery = function() {
 		var j = i;
 		var imgTag = document.createElement("img")
 		var url = images[i];
-		url =ImgFuncs.toDataURL(ImgFuncs.scaleImageData(ImgFuncs.fromDataURL(url), 4));
+		//url =ImgFuncs.toDataURL(ImgFuncs.scaleImageData(ImgFuncs.fromDataURL(url), 4));
 		imgTag.src = url;
 		imgTag.setAttribute("download","img.png");
 		if(native) {
 			// On native iOS the img callout doesn't work, so link to the image elsewhere.
-			var linkTag = document.createElement("a");
+			linkTag = document.createElement("a");
 			linkTag.setAttribute("href","http://superpartyawesome.com/things/imageDisplay/#"+url);
 			linkTag.appendChild(imgTag);
 			linkTag.setAttribute("target","_blank");
@@ -664,6 +664,7 @@ Gallery.displayGallery = function() {
 		else {
 			newGallery.appendChild(imgTag);
 		}
+
 		
 	}
 	document.body.appendChild(newGallery);
@@ -2525,10 +2526,12 @@ ImgFuncs.scaleImageData = function(imgDat1, scale) {
 }
 
 ImgFuncs.fromImage = function(img) {
-	var canvas = Artsy.createCanvas(img.width, img.height);
+	var w = img.width;
+	var h = img.height;
+	var canvas = Artsy.createCanvas(w, h);
 	var ctx = canvas.getContext('2d');
 	ctx.drawImage(img,0,0);
-	var data = ctx.getImageData(0, 0, img.width, img.height);
+	var data = ctx.getImageData(0, 0, w, h);
 	return data;
 }
 
