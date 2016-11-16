@@ -29,11 +29,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 function Emotion(keycode, joy, fear, disgust, anger, sadness) {
 	this.keycode = keycode;
 	if ((joy == 0) && (fear == 0) && (disgust == 0) && (anger == 0) && (sadness == 0)) {
-		joy = Math.floor(Math.random() * 21) - 10;
-		fear = Math.floor(Math.random() * 21) - 10;
-		disgust = Math.floor(Math.random() * 21) - 10;
-		anger = Math.floor(Math.random() * 21) - 10;
-		sadness = Math.floor(Math.random() * 21) - 10;
+		var max = 51;
+		var half = 25;
+		joy = Math.floor(Math.random() * max) - half;
+		fear = Math.floor(Math.random() * max) - half;
+		disgust = Math.floor(Math.random() * max) - half;
+		anger = Math.floor(Math.random() * max) - half;
+		sadness = Math.floor(Math.random() * max) - half;
 	}
 	this.state = new Array(joy,fear,disgust,anger,sadness);
 	
@@ -54,6 +56,12 @@ function Emotion(keycode, joy, fear, disgust, anger, sadness) {
 	this.add = function(otherEmotion) {
 		for (var i = 0; i < this.state.length; ++i) {
 			this.state[i] += otherEmotion.state[i];
+		}
+	}
+
+	this.addm = function(otherEmotion, mul) {
+		for (var i = 0; i < this.state.length; ++i) {
+			this.state[i] += otherEmotion.state[i] * mul;
 		}
 	}
 }
@@ -200,30 +208,44 @@ Artsy.franIt = function(state) {
 			var action = actions[i];
 			if (action["emotion"]) {
 				var emotion = action["emotion"];
-				var weight = state.franEmotion.compare(emotion);
-				if (weight > maxWeight) {
-					emotions = new Array(emotion);
-					maxWeight = weight;
-				}
-				else if (weight == maxWeight) {
-					emotions.push(emotion);
-				}
+				emotion.weight = state.franEmotion.compare(emotion);
+				emotions.push(emotion);
+			}
+		}
+
+		emotions.sort(function (a, b) {
+			return b.weight - a.weight;
+		});
+
+		var max = emotions[0].weight;
+
+		emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 5 });
+
+		var weights = new Array();
+
+		for (var i = 0; i < emotions.length; i++) {
+			var numa = emotions.length - i
+			numa *= numa;
+			for (var j = 0; j < numa; j++) {
+				weights.push(i);
 			}
 		}
 
 		var move = {};
-		var num = Math.floor(Math.random() * 5) + 1;
+		var num = Math.floor(Math.random() * 10) + 1;
+		var maxLen = 15;
+		var len = Math.floor(Math.random() * maxLen) + 1;
 
 		for (var i = 0; i < num; ++i) {
-			var valid = emotions[Math.floor(Math.random()*emotions.length)];
+			var key = weights[Math.floor(Math.random()*weights.length)]
+			var valid = emotions[key];
 			if ((valid) && (!move[valid.keycode])) {
 				move[valid.keycode] = true;
-				state.franEmotion.add(valid);
+				state.franEmotion.addm(valid, 1 + len / maxLen);
 			}
 		}
 
 		if (Object.keys(move).length > 0) {
-			var len = Math.floor(Math.random() * 10) + 1;
 			for (var i = 0; i < len; ++i) {
 				state.franMoves.push(move);
 			}
@@ -238,6 +260,20 @@ Artsy.franIt = function(state) {
 		if(first == true) {
 			state.pressStates = move;
 		}
+
+		var keys = Object.keys(move);
+		var actions = Artsy.allActions;
+		var hasKeys = false;
+		for (var i = 0; i < actions.length; ++i) {
+			if(actions[i]["keycode"] > 0 && move[actions[i]["keycode"]] == true) {
+				hasKeys = true;
+				break;
+			}
+		}
+		if (hasKeys == false) {
+			state.franMoves = [];
+		}
+
 	}
 
 	return state
@@ -363,7 +399,7 @@ Artsy.update = function() {
 		if(Artsy.state.fran == true) {
 			message.push("Auto artist on");
 		}
-		if(message.length > 0) {
+		if(message.length > 0 && false) {
 			var size = 15;
 			var offset = (message.length - 1) * size / 2;
 			var maxWidth = 0
@@ -636,36 +672,40 @@ Gallery.displayGallery = function() {
 	if (("standalone" in window.navigator) && window.navigator.standalone ){
 		native = true;
 	}
-
+	var imgTags = new Array();
 	for (var i = 0; i < images.length; ++i) {
-		var linkTag = null;
 		var j = i;
-		var imgTag = document.createElement("img")
-		var url = images[i];
-		//url =ImgFuncs.toDataURL(ImgFuncs.scaleImageData(ImgFuncs.fromDataURL(url), 4));
-		imgTag.src = url;
-		imgTag.setAttribute("download","img.png");
-		if(native) {
-			// On native iOS the img callout doesn't work, so link to the image elsewhere.
-			linkTag = document.createElement("a");
-			linkTag.setAttribute("href","http://superpartyawesome.com/things/imageDisplay/#"+url);
-			linkTag.appendChild(imgTag);
-			linkTag.setAttribute("target","_blank");
-			linkTag.setAttribute("rel","external");
-			linkTag.setAttribute("download","img.png");
-				// var url = images[i];
-				// linkTag.onclick = function(e) {
-				// 	e.preventDefault();
-				// 	window.open(this.getAttribute("href"), "_blank");
-				// 	return false;
-				// }
+		ImgFuncs.loadImage(images[i], function(img) {
+			var data = ImgFuncs.fromImage(img);
+			var url = ImgFuncs.toDataURL(ImgFuncs.scaleImageData(data, 4));
+			var imgTag = document.createElement("img")
+			imgTag.src = url;
+			imgTag.setAttribute("download","img.png");
+			if(native) {
+				// On native iOS the img callout doesn't work, so link to the image elsewhere.
+				var linkTag = document.createElement("a");
+				linkTag.setAttribute("href","http://superpartyawesome.com/things/imageDisplay/#"+url);
+				linkTag.appendChild(imgTag);
+				linkTag.setAttribute("target","_blank");
+				linkTag.setAttribute("rel","external");
+				linkTag.setAttribute("download","img.png");
 				newGallery.appendChild(linkTag);
-		}
-		else {
-			newGallery.appendChild(imgTag);
-		}
+			}
+			else {
+				newGallery.appendChild(imgTag);
+			}
+			imgTags.push(imgTag);
+			if(imgTags.length == images.length) {
+				while (newGallery.firstChild) {
+				    newGallery.removeChild(newGallery.firstChild);
+				}
+				newGallery.appendChild(close);
+				for (var i = 0; i < imgTags.length; i++) {
+					newGallery.appendChild(imgTags[i]);
+				}
+			}
 
-		
+		});
 	}
 	document.body.appendChild(newGallery);
 
@@ -986,7 +1026,7 @@ Artsy.actions.magic = {
 Artsy.actions.findEdgesRed = {
 	name: "findEdgesRed",
 	keycode: 69, // E
-	emotion: new Emotion(69,0,0,0,0,-50),
+	emotion: new Emotion(69,0,0,0,0,-500),
 	action: function(state) {
 		var output = ImgFuncs.findEdges(state.imageData, 2, 192, new Array(255,0,0))
 		state.imageData = output;
@@ -997,7 +1037,7 @@ Artsy.actions.findEdgesRed = {
 Artsy.actions.findEdgesWhite = {
 	name: "findEdgesWhite",
 	keycode: 79, // O
-	emotion: new Emotion(79,0,0,0,0,-50),
+	emotion: new Emotion(79,0,0,0,0,-500),
 	action: function(state) {
 		var output = ImgFuncs.findEdges(state.imageData, 0, 128, new Array(255,255,255))
 		state.imageData = output;
@@ -1008,7 +1048,7 @@ Artsy.actions.findEdgesWhite = {
 Artsy.actions.findEdgesGreen = {
 	name: "findEdgesGreen",
 	keycode: 65, // A
-	emotion: new Emotion(65,0,0,0,0,-50),
+	emotion: new Emotion(65,0,0,0,0,-500),
 	action: function(state) {
 		var output = ImgFuncs.findEdges(state.imageData, 1, 128, new Array(0,255,0))
 		state.imageData = output;
@@ -2516,13 +2556,26 @@ ImgFuncs.scaleImageData = function(imgDat1, scale) {
     var pix2= new Uint32Array( imgDat2.data.buffer );
     var canvasWidth1 = imgDat1.width;
     var canvasWidth2 = imgDat2.width;
-    for(var x=0;x<imgDat2.width;++x) {
-        for(var y=0;y<imgDat2.height;++y) {
-            pix2[y * imgDat2.width + x]=pix1[(~~(y/scale)) * imgDat1.width + (~~(x/scale))]
+    for(var x=0;x<imgDat1.width;++x) {
+        for(var y=0;y<imgDat1.height;++y) {
+        	var idx = y * imgDat1.width + x;
+        	for (var i = 0; i < scale; ++i) {
+        		for (var j = 0; j < scale; ++j) {
+	        		pix2[(((y * scale) + j) * imgDat2.width) + (x * scale) + i] = pix1[idx];
+	        	}
+        	}
         }
     }
     ImgFuncs.addBufferToImageData(imgDat2);
     return imgDat2
+}
+
+ImgFuncs.loadImage = function(url, callBack) {
+	var img = new Image();
+	img.onload = function() {
+		callBack(img);
+	}
+	img.src = url;
 }
 
 ImgFuncs.fromImage = function(img) {
