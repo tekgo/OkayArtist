@@ -189,11 +189,15 @@ Artsy.state = {
 	touches: new Array(),
 	mouseDown: false,
 	mousePoint: {x: 0, y: 0},
+	similar: null,
+	similarImg: null,
 }
 
 // Run the auto-artist.
 Artsy.franIt = function(state) {
 	if (state.fran == false) {
+		state.similar = null;
+		state.similarImg = null;
 		return state;
 	}
 
@@ -201,54 +205,119 @@ Artsy.franIt = function(state) {
 
 	if (state.franMoves.length <= 0) {
 		first = true;
-		var emotions = new Array()
-		var actions = Artsy.allActions;
-		var maxWeight = 0;
-		for (var i = 0; i < actions.length; ++i) {
-			var action = actions[i];
-			if (action["emotion"]) {
-				var emotion = action["emotion"];
-				emotion.weight = state.franEmotion.compare(emotion);
-				emotions.push(emotion);
-			}
-		}
-
-		emotions.sort(function (a, b) {
-			return b.weight - a.weight;
-		});
-
-		var max = emotions[0].weight;
-
-		emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 5 });
-
-		var weights = new Array();
-
-		for (var i = 0; i < emotions.length; i++) {
-			var numa = emotions.length - i
-			numa *= numa;
-			for (var j = 0; j < numa; j++) {
-				weights.push(i);
-			}
-		}
-
+		var actions = Artsy.allActions.filter(function(a) { return a["emotion"] != undefined });
 		var move = {};
-		var num = Math.floor(Math.random() * 10) + 1;
-		var maxLen = 15;
-		var len = Math.floor(Math.random() * maxLen) + 1;
+		if (state.similar == null) {
+			var emotions = new Array()
+			var maxWeight = 0;
+			for (var i = 0; i < actions.length; ++i) {
+				var action = actions[i];
+				if (action["emotion"]) {
+					var emotion = action["emotion"];
+					emotion.weight = state.franEmotion.compare(emotion);
+					emotions.push(emotion);
+				}
+			}
 
-		for (var i = 0; i < num; ++i) {
-			var key = weights[Math.floor(Math.random()*weights.length)]
-			var valid = emotions[key];
-			if ((valid) && (!move[valid.keycode])) {
-				move[valid.keycode] = true;
-				state.franEmotion.addm(valid, 1 + len / maxLen);
+			emotions.sort(function (a, b) {
+				return b.weight - a.weight;
+			});
+
+			var max = emotions[0].weight;
+
+			emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 5 });
+
+			var weights = new Array();
+
+			for (var i = 0; i < emotions.length; i++) {
+				var numa = emotions.length - i
+				numa *= numa;
+				for (var j = 0; j < numa; j++) {
+					weights.push(i);
+				}
+			}
+
+			var num = Math.floor(Math.random() * 10) + 1;
+			var maxLen = 15;
+			var len = Math.floor(Math.random() * maxLen) + 1;
+
+			for (var i = 0; i < num; ++i) {
+				var key = weights[Math.floor(Math.random()*weights.length)]
+				var valid = emotions[key];
+				if ((valid) && (!move[valid.keycode])) {
+					move[valid.keycode] = true;
+					state.franEmotion.addm(valid, 1 + len / maxLen);
+				}
+			}
+
+			if (Object.keys(move).length > 0) {
+				for (var i = 0; i < len; ++i) {
+					state.franMoves.push(move);
+				}
 			}
 		}
+		else {
+			var nonActions = actions.filter(function(a) { return a.affectsCanvas == false });
+			var affectActions = actions.filter(function(a) { return a.affectsCanvas == true });
 
-		if (Object.keys(move).length > 0) {
-			for (var i = 0; i < len; ++i) {
-				state.franMoves.push(move);
+			var emotions = new Array()
+			if (state.ticks % 8 == 0) {
+
+				for (var i = 0; i < nonActions.length; i++) {
+					emotions.push(nonActions[i]["emotion"]);
+				}
+
+				var num = Math.floor(Math.random() * 2) + 1;
+					for (var i = 0; i < num; ++i) {
+					var valid = emotions[Math.floor(Math.random()*emotions.length)]
+					if ((valid) && (!move[valid.keycode])) {
+						move[valid.keycode] = true;
+					}
+				}
+
 			}
+			else {
+				var baseImg = ImgFuncs.copyData(state.imageData);
+				var similar = ImgFuncs.copyData(state.similar);
+				ImgFuncs.addBufferToImageData(baseImg);
+				ImgFuncs.addBufferToImageData(similar);
+				state.imageData = null;
+				state.similar = null;
+				var baser = JSON.stringify(state);
+				
+				for (var i = 0; i < affectActions.length; i++) {
+					var baseState = JSON.parse(baser);
+					var action = affectActions[i];
+					var emotion = action["emotion"];
+					baseState.imageData = ImgFuncs.copyData(baseImg);
+					ImgFuncs.addBufferToImageData(baseState.imageData);
+					baseState = action.action(baseState);
+					emotion.weight = ImgFuncs.similar(similar, baseState.imageData);
+					emotions.push(emotion);
+
+				}
+
+				emotions.sort(function (a, b) {
+					return a.weight - b.weight;
+				});
+
+				var max = emotions[0].weight;
+
+				emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 256 });
+
+				var num = Math.floor(Math.random() * 2) + 1;
+					for (var i = 0; i < num; ++i) {
+					var valid = emotions[Math.floor(Math.random()*emotions.length)]
+					if ((valid) && (!move[valid.keycode])) {
+						move[valid.keycode] = true;
+					}
+				}
+
+				state.imageData = baseImg;
+				state.similar = similar;
+
+			}
+			state.franMoves.push(move);
 		}
 	}
 
@@ -314,7 +383,57 @@ Artsy.start = function() {
 
 	Artsy.allActions = Artsy.findAllActions();
 	Artsy.update();
+
+	Artsy.canvas.ondragover = function () { this.className = 'hover'; return false; };
+	Artsy.canvas.ondragend = function () { this.className = ''; return false; };
+	Artsy.canvas.ondrop = function (e) {
+		this.className = '';
+		e.preventDefault();
+		Artsy.readfiles(e.dataTransfer.files, false);
+	}
+
+	Artsy.keyboard.ondragover = function () { this.className = 'hover'; return false; };
+	Artsy.keyboard.ondragend = function () { this.className = ''; return false; };
+	Artsy.keyboard.ondrop = function (e) {
+		this.className = '';
+		e.preventDefault();
+		Artsy.readfiles(e.dataTransfer.files, true);
+	}
+
 };
+
+Artsy.readfiles = function(files, similar) {
+	// Only care about the first file.
+	var file = files[0];
+	if (file != undefined) {
+	    var reader = new FileReader();
+	    reader.onload = function (event) {
+		var image = new Image();
+		image.src = event.target.result;
+		image.onload = function() {
+			var canvas = document.createElement('canvas');
+			var context = canvas.getContext('2d');
+			// Draw it onto a 128 x 128 canvas.
+			canvas.width = Artsy.constants.defaultSize;
+			canvas.height = Artsy.constants.defaultSize;
+			context.drawImage(image, 0,0, Artsy.constants.defaultSize, Artsy.constants.defaultSize);
+			var imgDat = context.getImageData(0, 0, Artsy.constants.defaultSize, Artsy.constants.defaultSize);
+			ImgFuncs.addBufferToImageData(imgDat);
+			if (similar == true) {
+				Artsy.state.similar = imgDat;
+				var newImage = new Image();
+				newImage.src = canvas.toDataURL();
+				Artsy.state.similarImg = newImage;
+				Artsy.state.fran = true;
+			}
+			else {
+				Artsy.state.imageData = imgDat;
+			}
+		}
+    };
+	    reader.readAsDataURL(file);
+	}
+}
 
 // Per frame update.
 Artsy.update = function() {
@@ -399,7 +518,7 @@ Artsy.update = function() {
 		if(Artsy.state.fran == true) {
 			message.push("Auto artist on");
 		}
-		if(message.length > 0 && false) {
+		if(message.length > 0 && Artsy.state.similar == null) {
 			var size = 15;
 			var offset = (message.length - 1) * size / 2;
 			var maxWidth = 0
@@ -424,7 +543,12 @@ Artsy.update = function() {
 	// Color the keys yellow if a key is being pressed.
 	if (ImgFuncs.boardData && Artsy.keyboard) {
 		var btx = Artsy.keyboard.getContext('2d');
-		btx.drawImage(ImgFuncs.board, 0, 0);
+		if (Artsy.state.similarImg != null) {
+			btx.drawImage(Artsy.state.similarImg, 0, 0);
+		}
+		else {
+			btx.drawImage(ImgFuncs.board, 0, 0);
+		}
 		btx.fillStyle = "rgba(255,255,127,0.5)";
 
 		for (var i = 0; i < touchKeys.length; ++i) {
@@ -720,6 +844,7 @@ Artsy.actions = {}
 // Draws solid horizontal lines.
 Artsy.actions.greyFill = {
 	name: "Random greyscale fill",
+	affectsCanvas: true,
 	action: function(state) {
 		var output = new ImageData(state.imageData.width, state.imageData.height);
 		ImgFuncs.addBufferToImageData(output);
@@ -744,6 +869,7 @@ Artsy.actions.greyFill = {
 
 Artsy.actions.also_do_something_neat_idk = {
 	name: "also_do_something_neat_idk",
+	affectsCanvas: true,
 	keycode: 77, // M
 	emotion: new Emotion(77,1,2,3,0,0),
 	action: function(state) {
@@ -791,6 +917,7 @@ Artsy.actions.also_do_something_neat_idk = {
 
 Artsy.actions.do_a_thing = {
 	name: "do_a_thing",
+	affectsCanvas: true,
 	keycode: 89, // Y
 	emotion: new Emotion(89,-1,-2,-3,0,0),
 	action: function(state) {
@@ -844,6 +971,7 @@ Artsy.actions.do_a_thing = {
 
 Artsy.actions.do_another_thing = {
 	name: "do_another_thing",
+	affectsCanvas: true,
 	keycode: 84, // T
 	emotion: new Emotion(84,0,0,0,0,0),
 	action: function(state) {
@@ -880,6 +1008,7 @@ Artsy.actions.do_another_thing = {
 
 Artsy.actions.do_a_weird_thing = {
 	name: "do_a_weird_thing",
+	affectsCanvas: true,
 	keycode: 73, // I
 	emotion: new Emotion(73,-5,-5,5,5,5),
 	action: function(state) {
@@ -900,6 +1029,7 @@ Artsy.actions.do_a_weird_thing = {
 
 Artsy.actions.do_a_locational_thing = {
 	name: "do_a_locational_thing",
+	affectsCanvas: true,
 	keycode: 71, // G
 	emotion: new Emotion(71,0,0,0,0,0),
 	action: function(state) {
@@ -933,6 +1063,7 @@ Artsy.actions.do_a_locational_thing = {
 
 Artsy.actions.down_thing = {
 	name: "down_thing",
+	affectsCanvas: true,
 	keycode: 70, // F
 	emotion: new Emotion(70,0,0,0,0,0),
 	action: function(state) {
@@ -970,6 +1101,7 @@ Artsy.actions.down_thing = {
 
 Artsy.actions.bandit = {
 	name: "bandit",
+	affectsCanvas: true,
 	keycode: 87, // W
 	emotion: new Emotion(87,0,0,0,0,0),
 	action: function(state) {
@@ -996,6 +1128,7 @@ Artsy.actions.bandit = {
 
 Artsy.actions.magic = {
 	name: "magic",
+	affectsCanvas: true,
 	keycode: 76, // L
 	emotion: new Emotion(76,0,0,0,0,0),
 	action: function(state) {
@@ -1025,6 +1158,7 @@ Artsy.actions.magic = {
 
 Artsy.actions.findEdgesRed = {
 	name: "findEdgesRed",
+	affectsCanvas: true,
 	keycode: 69, // E
 	emotion: new Emotion(69,0,0,0,0,-500),
 	action: function(state) {
@@ -1036,6 +1170,7 @@ Artsy.actions.findEdgesRed = {
 
 Artsy.actions.findEdgesWhite = {
 	name: "findEdgesWhite",
+	affectsCanvas: true,
 	keycode: 79, // O
 	emotion: new Emotion(79,0,0,0,0,-500),
 	action: function(state) {
@@ -1047,6 +1182,7 @@ Artsy.actions.findEdgesWhite = {
 
 Artsy.actions.findEdgesGreen = {
 	name: "findEdgesGreen",
+	affectsCanvas: true,
 	keycode: 65, // A
 	emotion: new Emotion(65,0,0,0,0,-500),
 	action: function(state) {
@@ -1058,6 +1194,7 @@ Artsy.actions.findEdgesGreen = {
 
 Artsy.actions.SDL_SCANCODE_Q = {
 	name: "SDL_SCANCODE_Q",
+	affectsCanvas: true,
 	keycode: 81, // Q
 	emotion: new Emotion(81,0,0,0,0,0),
 	action: function(state) {
@@ -1068,6 +1205,7 @@ Artsy.actions.SDL_SCANCODE_Q = {
 
 Artsy.actions.SDL_SCANCODE_R = {
 	name: "SDL_SCANCODE_R",
+	affectsCanvas: true,
 	keycode: 82, // R
 	emotion: new Emotion(82,0,0,0,0,0),
 	action: function(state) {
@@ -1083,6 +1221,7 @@ Artsy.actions.SDL_SCANCODE_R = {
 
 Artsy.actions.SDL_SCANCODE_U = {
 	name: "SDL_SCANCODE_U",
+	affectsCanvas: true,
 	keycode: 85, // U
 	emotion: new Emotion(85,0,0,0,0,0),
 	action: function(state) {
@@ -1134,6 +1273,7 @@ Artsy.actions.SDL_SCANCODE_U = {
 
 Artsy.actions.SDL_SCANCODE_P = {
 	name: "SDL_SCANCODE_P",
+	affectsCanvas: true,
 	keycode: 80, // P
 	emotion: new Emotion(80,0,0,0,0,0),
 	action: function(state) {
@@ -1162,6 +1302,7 @@ Artsy.actions.SDL_SCANCODE_P = {
 
 Artsy.actions.SDL_SCANCODE_D = {
 	name: "SDL_SCANCODE_D",
+	affectsCanvas: true,
 	keycode: 68, // D
 	emotion: new Emotion(68,0,0,0,0,0),
 	action: function(state) {
@@ -1176,6 +1317,7 @@ Artsy.actions.SDL_SCANCODE_D = {
 
 Artsy.actions.SDL_SCANCODE_K = {
 	name: "SDL_SCANCODE_K",
+	affectsCanvas: true,
 	keycode: 75, // K
 	emotion: new Emotion(75,1,1,1,1,1),
 	action: function(state) {
@@ -1204,6 +1346,7 @@ Artsy.actions.SDL_SCANCODE_K = {
 
 Artsy.actions.SDL_SCANCODE_Z = {
 	name: "SDL_SCANCODE_Z",
+	affectsCanvas: true,
 	keycode: 90, // Z
 	emotion: new Emotion(90,0,0,0,0,0),
 	action: function(state) {
@@ -1214,6 +1357,7 @@ Artsy.actions.SDL_SCANCODE_Z = {
 
 Artsy.actions.SDL_SCANCODE_C = {
 	name: "SDL_SCANCODE_C",
+	affectsCanvas: true,
 	keycode: 67, // C
 	emotion: new Emotion(67,0,0,0,0,0),
 	action: function(state) {
@@ -1224,6 +1368,7 @@ Artsy.actions.SDL_SCANCODE_C = {
 
 Artsy.actions.SDL_SCANCODE_B = {
 	name: "SDL_SCANCODE_B",
+	affectsCanvas: true,
 	keycode: 66, // B
 	emotion: new Emotion(66,0,0,0,0,0),
 	action: function(state) {
@@ -1275,6 +1420,7 @@ Artsy.actions.SDL_SCANCODE_B = {
 
 Artsy.actions.SDL_SCANCODE_N = {
 	name: "SDL_SCANCODE_N",
+	affectsCanvas: true,
 	keycode: 78, // N
 	emotion: new Emotion(78,0,0,0,0,0),
 	action: function(state) {
@@ -1285,6 +1431,7 @@ Artsy.actions.SDL_SCANCODE_N = {
 
 Artsy.actions.circle_thing = {
 	name: "circle_thing",
+	affectsCanvas: true,
 	keycode: 32, // SPACE
 	emotion: new Emotion(32,0,0,0,0,0),
 	action: function(state) {
@@ -1306,6 +1453,7 @@ Artsy.actions.circle_thing = {
 
 Artsy.actions.SDL_SCANCODE_X = {
 	name: "SDL_SCANCODE_X",
+	affectsCanvas: false,
 	pressCode: 88, // X
 	// emotion: new Emotion(88,0,0,0,0,0),
 	action: function(state) {
@@ -1317,6 +1465,7 @@ Artsy.actions.SDL_SCANCODE_X = {
 
 Artsy.actions.SDL_SCANCODE_V = {
 	name: "SDL_SCANCODE_V",
+	affectsCanvas: true,
 	pressCode: 86, // V
 	emotion: new Emotion(86,0,0,0,0,0),
 	action: function(state) {
@@ -1328,6 +1477,7 @@ Artsy.actions.SDL_SCANCODE_V = {
 
 Artsy.actions.SDL_SCANCODE_S = {
 	name: "SDL_SCANCODE_S",
+	affectsCanvas: true,
 	pressCode: 83, // S
 	emotion: new Emotion(83,0,0,0,0,0),
 	action: function(state) {
@@ -1342,6 +1492,7 @@ Artsy.actions.SDL_SCANCODE_S = {
 
 Artsy.actions.SDL_SCANCODE_H = {
 	name: "SDL_SCANCODE_H",
+	affectsCanvas: true,
 	pressCode: 72, // H
 	emotion: new Emotion(72,20,0,20,0,0),
 	action: function(state) {
@@ -1357,6 +1508,7 @@ Artsy.actions.SDL_SCANCODE_H = {
 
 Artsy.actions.SDL_SCANCODE_J = {
 	name: "SDL_SCANCODE_J",
+	affectsCanvas: true,
 	pressCode: 74, // J
 	emotion: new Emotion(74,0,0,0,0,0),
 	action: function(state) {
@@ -1391,6 +1543,7 @@ Artsy.actions.SDL_SCANCODE_J = {
 
 Artsy.actions.SDL_SCANCODE_MINUS = {
 	name: "SDL_SCANCODE_MINUS",
+	affectsCanvas: false,
 	pressCode: 189, // MINUS
 	emotion: new Emotion(189,0,0,0,0,0),
 	action: function(state) {
@@ -1408,6 +1561,7 @@ Artsy.actions.SDL_SCANCODE_MINUS = {
 
 Artsy.actions.SDL_SCANCODE_UP = {
 	name: "SDL_SCANCODE_UP",
+	affectsCanvas: true,
 	pressCode: 38, // 
 	emotion: new Emotion(38,20,20,0,0,0),
 	action: function(state) {
@@ -1423,6 +1577,7 @@ Artsy.actions.SDL_SCANCODE_UP = {
 
 Artsy.actions.SDL_SCANCODE_DOWN = {
 	name: "SDL_SCANCODE_DOWN",
+	affectsCanvas: true,
 	pressCode: 40, // 
 	emotion: new Emotion(40,0,0,0,0,0),
 	action: function(state) {
@@ -1443,6 +1598,7 @@ Artsy.actions.SDL_SCANCODE_DOWN = {
 
 Artsy.actions.SDL_SCANCODE_LEFT = {
 	name: "SDL_SCANCODE_LEFT",
+	affectsCanvas: true,
 	pressCode: 37, // 
 	emotion: new Emotion(37,0,0,0,0,0),
 	action: function(state) {
@@ -1460,6 +1616,7 @@ Artsy.actions.SDL_SCANCODE_LEFT = {
 
 Artsy.actions.SDL_SCANCODE_RIGHT = {
 	name: "SDL_SCANCODE_RIGHT",
+	affectsCanvas: true,
 	pressCode: 39, // 
 	emotion: new Emotion(39,0,0,0,0,0),
 	action: function(state) {
@@ -1479,6 +1636,7 @@ Artsy.actions.SDL_SCANCODE_RIGHT = {
 
 Artsy.actions.SDL_SCANCODE_RETURN = {
 	name: "SDL_SCANCODE_RETURN",
+	affectsCanvas: false,
 	pressCode: 13, // 
 	action: function(state) {
 		Gallery.saveImageData(state.imageData);
@@ -1489,6 +1647,7 @@ Artsy.actions.SDL_SCANCODE_RETURN = {
 
 Artsy.actions.Gallery = {
 	name: "Gallery",
+	affectsCanvas: false,
 	pressCode: 220, // '\'
 	action: function(state) {
 		Gallery.displayGallery();
@@ -1502,6 +1661,7 @@ Artsy.actions.Gallery = {
 
 Artsy.actions.SDL_SCANCODE_1 = {
 	name: "SDL_SCANCODE_1",
+	affectsCanvas: false,
 	pressCode: 49, // 
 	emotion: new Emotion(49,0,0,0,0,0),
 	action: function(state) {
@@ -1513,6 +1673,7 @@ Artsy.actions.SDL_SCANCODE_1 = {
 
 Artsy.actions.SDL_SCANCODE_2 = {
 	name: "SDL_SCANCODE_2",
+	affectsCanvas: false,
 	pressCode: 50, // 
 	emotion: new Emotion(50,0,0,0,0,0),
 	action: function(state) {
@@ -1524,6 +1685,7 @@ Artsy.actions.SDL_SCANCODE_2 = {
 
 Artsy.actions.SDL_SCANCODE_3 = {
 	name: "SDL_SCANCODE_3",
+	affectsCanvas: false,
 	pressCode: 51, // 
 	emotion: new Emotion(51,0,0,0,0,0),
 	action: function(state) {
@@ -1535,6 +1697,7 @@ Artsy.actions.SDL_SCANCODE_3 = {
 
 Artsy.actions.SDL_SCANCODE_4 = {
 	name: "SDL_SCANCODE_4",
+	affectsCanvas: false,
 	pressCode: 52, // 
 	emotion: new Emotion(52,0,0,0,0,0),
 	action: function(state) {
@@ -1546,6 +1709,7 @@ Artsy.actions.SDL_SCANCODE_4 = {
 
 Artsy.actions.SDL_SCANCODE_5 = {
 	name: "SDL_SCANCODE_5",
+	affectsCanvas: false,
 	pressCode: 53, // 
 	emotion: new Emotion(53,0,0,0,0,0),
 	action: function(state) {
@@ -1557,6 +1721,7 @@ Artsy.actions.SDL_SCANCODE_5 = {
 
 Artsy.actions.SDL_SCANCODE_6 = {
 	name: "SDL_SCANCODE_6",
+	affectsCanvas: false,
 	pressCode: 54, // 
 	emotion: new Emotion(54,0,0,0,0,0),
 	action: function(state) {
@@ -1568,6 +1733,7 @@ Artsy.actions.SDL_SCANCODE_6 = {
 
 Artsy.actions.SDL_SCANCODE_7 = {
 	name: "SDL_SCANCODE_7",
+	affectsCanvas: false,
 	pressCode: 55, // 
 	emotion: new Emotion(55,0,0,0,0,0),
 	action: function(state) {
@@ -1579,6 +1745,7 @@ Artsy.actions.SDL_SCANCODE_7 = {
 
 Artsy.actions.SDL_SCANCODE_8 = {
 	name: "SDL_SCANCODE_8",
+	affectsCanvas: false,
 	pressCode: 56, // 
 	emotion: new Emotion(56,0,0,0,0,0),
 	action: function(state) {
@@ -1590,6 +1757,7 @@ Artsy.actions.SDL_SCANCODE_8 = {
 
 Artsy.actions.SDL_SCANCODE_9 = {
 	name: "SDL_SCANCODE_9",
+	affectsCanvas: false,
 	pressCode: 57, // 
 	emotion: new Emotion(57,0,0,0,0,0),
 	action: function(state) {
@@ -1601,6 +1769,7 @@ Artsy.actions.SDL_SCANCODE_9 = {
 
 Artsy.actions.SDL_SCANCODE_0 = {
 	name: "SDL_SCANCODE_0",
+	affectsCanvas: false,
 	pressCode: 48, // 
 	emotion: new Emotion(48,0,0,0,0,0),
 	action: function(state) {
@@ -1612,6 +1781,7 @@ Artsy.actions.SDL_SCANCODE_0 = {
 
 Artsy.actions.SDL_SCANCODE_F1 = {
 	name: "SDL_SCANCODE_F1",
+	affectsCanvas: false,
 	pressCode: 112, // 
 	emotion: new Emotion(112,0,0,0,0,0),
 	action: function(state) {
@@ -1623,6 +1793,7 @@ Artsy.actions.SDL_SCANCODE_F1 = {
 
 Artsy.actions.SDL_SCANCODE_F2 = {
 	name: "SDL_SCANCODE_F2",
+	affectsCanvas: false,
 	pressCode: 113, // 
 	emotion: new Emotion(113,0,0,0,0,0),
 	action: function(state) {
@@ -1634,6 +1805,7 @@ Artsy.actions.SDL_SCANCODE_F2 = {
 
 Artsy.actions.SDL_SCANCODE_F3 = {
 	name: "SDL_SCANCODE_F3",
+	affectsCanvas: false,
 	pressCode: 114, // 
 	emotion: new Emotion(114,0,0,0,0,0),
 	action: function(state) {
@@ -1645,6 +1817,7 @@ Artsy.actions.SDL_SCANCODE_F3 = {
 
 Artsy.actions.SDL_SCANCODE_F4 = {
 	name: "SDL_SCANCODE_F4",
+	affectsCanvas: false,
 	pressCode: 115, // 
 	emotion: new Emotion(115,0,0,0,0,0),
 	action: function(state) {
@@ -1656,6 +1829,7 @@ Artsy.actions.SDL_SCANCODE_F4 = {
 
 Artsy.actions.SDL_SCANCODE_F5 = {
 	name: "SDL_SCANCODE_F5",
+	affectsCanvas: false,
 	pressCode: 116, // 
 	emotion: new Emotion(116,0,0,0,0,0),
 	action: function(state) {
@@ -1667,6 +1841,7 @@ Artsy.actions.SDL_SCANCODE_F5 = {
 
 Artsy.actions.SDL_SCANCODE_F6 = {
 	name: "SDL_SCANCODE_F6",
+	affectsCanvas: false,
 	pressCode: 117, // 
 	emotion: new Emotion(117,0,0,0,0,0),
 	action: function(state) {
@@ -1678,6 +1853,7 @@ Artsy.actions.SDL_SCANCODE_F6 = {
 
 Artsy.actions.SDL_SCANCODE_F7 = {
 	name: "SDL_SCANCODE_F7",
+	affectsCanvas: false,
 	pressCode: 118, // 
 	emotion: new Emotion(118,0,0,0,0,0),
 	action: function(state) {
@@ -1689,6 +1865,7 @@ Artsy.actions.SDL_SCANCODE_F7 = {
 
 Artsy.actions.SDL_SCANCODE_F8 = {
 	name: "SDL_SCANCODE_F8",
+	affectsCanvas: false,
 	pressCode: 119, // 
 	emotion: new Emotion(119,0,0,0,0,0),
 	action: function(state) {
@@ -1700,6 +1877,7 @@ Artsy.actions.SDL_SCANCODE_F8 = {
 
 Artsy.actions.SDL_SCANCODE_F9 = {
 	name: "SDL_SCANCODE_F9",
+	affectsCanvas: false,
 	pressCode: 120, // 
 	emotion: new Emotion(120,0,0,0,0,0),
 	action: function(state) {
@@ -1711,6 +1889,7 @@ Artsy.actions.SDL_SCANCODE_F9 = {
 
 Artsy.actions.SDL_SCANCODE_F10 = {
 	name: "SDL_SCANCODE_F10",
+	affectsCanvas: false,
 	pressCode: 121, // 
 	emotion: new Emotion(121,0,0,0,0,0),
 	action: function(state) {
@@ -1722,6 +1901,7 @@ Artsy.actions.SDL_SCANCODE_F10 = {
 
 Artsy.actions.SDL_SCANCODE_F11 = {
 	name: "SDL_SCANCODE_F11",
+	affectsCanvas: false,
 	pressCode: 122, // 
 	emotion: new Emotion(122,0,0,0,0,0),
 	action: function(state) {
@@ -1733,6 +1913,7 @@ Artsy.actions.SDL_SCANCODE_F11 = {
 
 Artsy.actions.SDL_SCANCODE_F12 = {
 	name: "SDL_SCANCODE_F12",
+	affectsCanvas: false,
 	pressCode: 123, // 
 	emotion: new Emotion(123,0,0,0,0,0),
 	action: function(state) {
@@ -1744,6 +1925,7 @@ Artsy.actions.SDL_SCANCODE_F12 = {
 
 Artsy.actions.SDL_SCANCODE_DELETE = {
 	name: "SDL_SCANCODE_DELETE",
+	affectsCanvas: true,
 	pressCode: 8, // 
 	action: function(state) {
 		// Undo
@@ -1757,6 +1939,7 @@ Artsy.actions.SDL_SCANCODE_DELETE = {
 
 Artsy.actions.SDL_SCANCODE_BACKSPACE = {
 	name: "SDL_SCANCODE_BACKSPACE",
+	affectsCanvas: true,
 	pressCode: 46, // 
 	action: function(state) {
 		// Undo
@@ -1766,6 +1949,7 @@ Artsy.actions.SDL_SCANCODE_BACKSPACE = {
 
 Artsy.actions.SDL_SCANCODE_EQUALS = {
 	name: "SDL_SCANCODE_EQUALS",
+	affectsCanvas: true,
 	pressCode: 187, // 
 	action: function(state) {
 		// Save snapshot.
@@ -2729,4 +2913,16 @@ ImgFuncs.textify = function(imageData) {
         	}
         }
     }
+}
+
+ImgFuncs.similar = function(imgDat1, imgDat2) {
+	var total = 0;
+	var length = imgDat1.width * imgDat1.height;
+	for (var i = 0; i < length; i++) {
+		var a = imgDat1.u8[i * 4] + imgDat1.u8[i * 4 + 1] + imgDat1.u8[i * 4 + 2];
+		var b = imgDat2.u8[i * 4] + imgDat2.u8[i * 4 + 1] + imgDat2.u8[i * 4 + 2];
+		var weight = (a / 3) - (b / 3);
+		total += weight < 0 ? -weight : weight;
+	}
+	return total;
 }
