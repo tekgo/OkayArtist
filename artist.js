@@ -2338,7 +2338,7 @@ else {
 // Gets a u32 for an x,y coord.
 ImgFuncs.getColor32 = function(imageData, x, y) {
 	if (imageData.x128) {
-		return ImgFuncs.fixEndian(imageData.u32[((~~(x + 128) % 128) + (128 * (~~(y + 128) % 128)))]);
+		return ImgFuncs.fixEndian(imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))]);
 	}
 	var width = imageData.width;
 	var height = imageData.height;
@@ -2349,7 +2349,7 @@ ImgFuncs.getColor32 = function(imageData, x, y) {
 // Sets a u32 for an x,y coord.
 ImgFuncs.setColor32 = function(imageData, x, y, color) {
 	if (imageData.x128) {
-		imageData.u32[((~~(x + 128) % 128) + (128 * (~~(y + 128) % 128)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+		imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
 		return
 	}
 	var width = imageData.width;
@@ -2391,6 +2391,9 @@ ImgFuncs.setColorArr = function(imageData, x, y, color) {
 
 // Gets a channel value for an x,y coord.
 ImgFuncs.getColorC = function(imageData, x, y, c) {
+	if (imageData.x128) {
+		return imageData.u8[(((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127))) * 4) + c];
+	}
 	var width = imageData.width;
 	var height = imageData.height;
 	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
@@ -2399,6 +2402,10 @@ ImgFuncs.getColorC = function(imageData, x, y, c) {
 
 // Sets a channel value for an x,y coord.
 ImgFuncs.setColorC = function(imageData, x, y,c, color) {
+	if (imageData.x128) {
+		imageData.u8[(((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127))) * 4) + c] = ((~~color % 256) + 256) % 256;
+		return
+	}
 	var width = imageData.width;
 	var height = imageData.height;
 	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
