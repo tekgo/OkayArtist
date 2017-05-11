@@ -183,171 +183,12 @@ Artsy.state = {
 	ticks: 0,
 	blip: true,
 	saveState: null,
-	fran: true, // Fran is the auto-artist
-	franMoves: new Array(),
-	franEmotion: new Emotion(0,0,0,0,0,0),
 	touches: new Array(),
 	mouseDown: false,
 	mousePoint: {x: 0, y: 0},
 	similar: null,
 	similarImg: null,
 }
-
-// Run the auto-artist.
-Artsy.franIt = function(state) {
-	if (state.fran == false) {
-		state.similar = null;
-		state.similarImg = null;
-		return state;
-	}
-
-	var first = false;
-
-	if (state.franMoves.length <= 0) {
-		first = true;
-		var actions = Artsy.allActions.filter(function(a) { return a["emotion"] != undefined });
-		var move = {};
-		if (state.similar == null) {
-			var emotions = new Array()
-			var maxWeight = 0;
-			for (var i = 0; i < actions.length; ++i) {
-				var action = actions[i];
-				if (action["emotion"]) {
-					var emotion = action["emotion"];
-					emotion.weight = state.franEmotion.compare(emotion);
-					emotions.push(emotion);
-				}
-			}
-
-			emotions.sort(function (a, b) {
-				return b.weight - a.weight;
-			});
-
-			var max = emotions[0].weight;
-
-			emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 5 });
-
-			var weights = new Array();
-
-			for (var i = 0; i < emotions.length; i++) {
-				var numa = emotions.length - i
-				numa *= numa;
-				for (var j = 0; j < numa; j++) {
-					weights.push(i);
-				}
-			}
-
-			var num = Math.floor(Math.random() * 10) + 1;
-			var maxLen = 15;
-			var len = Math.floor(Math.random() * maxLen) + 1;
-
-			for (var i = 0; i < num; ++i) {
-				var key = weights[Math.floor(Math.random()*weights.length)]
-				var valid = emotions[key];
-				if ((valid) && (!move[valid.keycode])) {
-					move[valid.keycode] = true;
-					state.franEmotion.addm(valid, 1 + len / maxLen);
-				}
-			}
-
-			if (Object.keys(move).length > 0) {
-				for (var i = 0; i < len; ++i) {
-					state.franMoves.push(move);
-				}
-			}
-		}
-		else {
-			var nonActions = actions.filter(function(a) { return a.affectsCanvas == false });
-			var affectActions = actions.filter(function(a) { return a.affectsCanvas == true });
-
-			var emotions = new Array()
-			if (state.ticks % 8 == 0) {
-
-				for (var i = 0; i < nonActions.length; i++) {
-					emotions.push(nonActions[i]["emotion"]);
-				}
-
-				var num = Math.floor(Math.random() * 2) + 1;
-					for (var i = 0; i < num; ++i) {
-					var valid = emotions[Math.floor(Math.random()*emotions.length)]
-					if ((valid) && (!move[valid.keycode])) {
-						move[valid.keycode] = true;
-					}
-				}
-
-			}
-			else {
-				var baseImg = ImgFuncs.copyData(state.imageData);
-				var similar = ImgFuncs.copyData(state.similar);
-				ImgFuncs.addBufferToImageData(baseImg);
-				ImgFuncs.addBufferToImageData(similar);
-				state.imageData = null;
-				state.similar = null;
-				var baser = JSON.stringify(state);
-				
-				for (var i = 0; i < affectActions.length; i++) {
-					var baseState = JSON.parse(baser);
-					var action = affectActions[i];
-					var emotion = action["emotion"];
-					baseState.imageData = ImgFuncs.copyData(baseImg);
-					ImgFuncs.addBufferToImageData(baseState.imageData);
-					baseState = action.action(baseState);
-					emotion.weight = ImgFuncs.similar(similar, baseState.imageData);
-					emotions.push(emotion);
-
-				}
-
-				emotions.sort(function (a, b) {
-					return a.weight - b.weight;
-				});
-
-				var max = emotions[0].weight;
-
-				emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 256 });
-
-				var num = Math.floor(Math.random() * 2) + 1;
-					for (var i = 0; i < num; ++i) {
-					var valid = emotions[Math.floor(Math.random()*emotions.length)]
-					if ((valid) && (!move[valid.keycode])) {
-						move[valid.keycode] = true;
-					}
-				}
-
-				state.imageData = baseImg;
-				state.similar = similar;
-
-			}
-			state.franMoves.push(move);
-		}
-	}
-
-	var move = state.franMoves.shift();
-	if (move) {
-		state.keyStates = {};
-		state.pressStates = {};
-		state.keyStates = move;
-		if(first == true) {
-			state.pressStates = move;
-		}
-
-		var keys = Object.keys(move);
-		var actions = Artsy.allActions;
-		var hasKeys = false;
-		for (var i = 0; i < actions.length; ++i) {
-			if(actions[i]["keycode"] > 0 && move[actions[i]["keycode"]] == true) {
-				hasKeys = true;
-				break;
-			}
-		}
-		if (hasKeys == false) {
-			state.franMoves = [];
-		}
-
-	}
-
-	return state
-}
-
 
 /* Lifecycle functions */
 
@@ -2496,24 +2337,24 @@ else {
 
 // Gets a u32 for an x,y coord.
 ImgFuncs.getColor32 = function(imageData, x, y) {
-	if (imageData.width == 128 && imageData.height == 128) {
-		return ImgFuncs.fixEndian(imageData.u32[((((~~x % 128) + 128) % 128) + (128 * (((~~y % 128) + 128) % 128)))]);
+	if (imageData.x128) {
+		return ImgFuncs.fixEndian(imageData.u32[((~~(x + 128) % 128) + (128 * (~~(y + 128) % 128)))]);
 	}
 	var width = imageData.width;
 	var height = imageData.height;
-	var byteOffset = ((((~~x % width) + width) % width) + (width * (((~~y % height) + height) % height)));
+	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height)));
 	return ImgFuncs.fixEndian(imageData.u32[byteOffset]);
 }
 
 // Sets a u32 for an x,y coord.
 ImgFuncs.setColor32 = function(imageData, x, y, color) {
-	if (imageData.width == 128 && imageData.height == 128) {
-		imageData.u32[((((~~x % 128) + 128) % 128) + (128 * (((~~y % 128) + 128) % 128)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+	if (imageData.x128) {
+		imageData.u32[((~~(x + 128) % 128) + (128 * (~~(y + 128) % 128)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
 		return
 	}
 	var width = imageData.width;
 	var height = imageData.height;
-	var byteOffset = ((((~~x % width) + width) % width) + (width * (((~~y % height) + height) % height)));
+	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height)));
 	imageData.u32[byteOffset] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
 }
 
@@ -2522,6 +2363,9 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 	if(!u32) {
 		u32 = new Uint32Array(imageData.data.buffer);
 		imageData.u32 = u32;
+		if (imageData.width == 128 && imageData.height == 128) {
+			imageData.x128 = true;
+		}
 	}
 
 	var u8 = imageData.u8;
@@ -2549,7 +2393,7 @@ ImgFuncs.setColorArr = function(imageData, x, y, color) {
 ImgFuncs.getColorC = function(imageData, x, y, c) {
 	var width = imageData.width;
 	var height = imageData.height;
-	var byteOffset = ((((~~x % width) + width) % width) + (width * (((~~y % height) + height) % height))) * 4;
+	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
 	return imageData.u8[byteOffset + c];
 }
 
@@ -2557,7 +2401,7 @@ ImgFuncs.getColorC = function(imageData, x, y, c) {
 ImgFuncs.setColorC = function(imageData, x, y,c, color) {
 	var width = imageData.width;
 	var height = imageData.height;
-	var byteOffset = ((((~~x % width) + width) % width) + (width * (((~~y % height) + height) % height))) * 4;
+	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
 	imageData.u8[byteOffset + c] = ((~~color % 256) + 256) % 256;
 }
 
@@ -2925,4 +2769,165 @@ ImgFuncs.similar = function(imgDat1, imgDat2) {
 		total += weight < 0 ? -weight : weight;
 	}
 	return total;
+}
+
+/* Auto Artist */
+
+Artsy.state.fran = true;
+Artsy.state.franMoves = new Array();
+Artsy.state.franEmotion = new Emotion(0,0,0,0,0,0);
+
+// Run the auto-artist.
+Artsy.franIt = function(state) {
+	if (state.fran == false) {
+		state.similar = null;
+		state.similarImg = null;
+		return state;
+	}
+
+	var first = false;
+
+	if (state.franMoves.length <= 0) {
+		first = true;
+		var actions = Artsy.allActions.filter(function(a) { return a["emotion"] != undefined });
+		var move = {};
+		if (state.similar == null) {
+			var emotions = new Array()
+			var maxWeight = 0;
+			for (var i = 0; i < actions.length; ++i) {
+				var action = actions[i];
+				if (action["emotion"]) {
+					var emotion = action["emotion"];
+					emotion.weight = state.franEmotion.compare(emotion);
+					emotions.push(emotion);
+				}
+			}
+
+			emotions.sort(function (a, b) {
+				return b.weight - a.weight;
+			});
+
+			var max = emotions[0].weight;
+
+			emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 5 });
+
+			var weights = new Array();
+
+			for (var i = 0; i < emotions.length; i++) {
+				var numa = emotions.length - i
+				numa *= numa;
+				for (var j = 0; j < numa; j++) {
+					weights.push(i);
+				}
+			}
+
+			var num = Math.floor(Math.random() * 10) + 1;
+			var maxLen = 15;
+			var len = Math.floor(Math.random() * maxLen) + 1;
+
+			for (var i = 0; i < num; ++i) {
+				var key = weights[Math.floor(Math.random()*weights.length)]
+				var valid = emotions[key];
+				if ((valid) && (!move[valid.keycode])) {
+					move[valid.keycode] = true;
+					state.franEmotion.addm(valid, 1 + len / maxLen);
+				}
+			}
+
+			if (Object.keys(move).length > 0) {
+				for (var i = 0; i < len; ++i) {
+					state.franMoves.push(move);
+				}
+			}
+		}
+		else {
+			var nonActions = actions.filter(function(a) { return a.affectsCanvas == false });
+			var affectActions = actions.filter(function(a) { return a.affectsCanvas == true });
+
+			var emotions = new Array()
+			if (state.ticks % 8 == 0) {
+
+				for (var i = 0; i < nonActions.length; i++) {
+					emotions.push(nonActions[i]["emotion"]);
+				}
+
+				var num = Math.floor(Math.random() * 2) + 1;
+					for (var i = 0; i < num; ++i) {
+					var valid = emotions[Math.floor(Math.random()*emotions.length)]
+					if ((valid) && (!move[valid.keycode])) {
+						move[valid.keycode] = true;
+					}
+				}
+
+			}
+			else {
+				var baseImg = ImgFuncs.copyData(state.imageData);
+				var similar = ImgFuncs.copyData(state.similar);
+				ImgFuncs.addBufferToImageData(baseImg);
+				ImgFuncs.addBufferToImageData(similar);
+				state.imageData = null;
+				state.similar = null;
+				var baser = JSON.stringify(state);
+				
+				for (var i = 0; i < affectActions.length; i++) {
+					var baseState = JSON.parse(baser);
+					var action = affectActions[i];
+					var emotion = action["emotion"];
+					baseState.imageData = ImgFuncs.copyData(baseImg);
+					ImgFuncs.addBufferToImageData(baseState.imageData);
+					baseState = action.action(baseState);
+					emotion.weight = ImgFuncs.similar(similar, baseState.imageData);
+					emotions.push(emotion);
+
+				}
+
+				emotions.sort(function (a, b) {
+					return a.weight - b.weight;
+				});
+
+				var max = emotions[0].weight;
+
+				emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 256 });
+
+				var num = Math.floor(Math.random() * 2) + 1;
+					for (var i = 0; i < num; ++i) {
+					var valid = emotions[Math.floor(Math.random()*emotions.length)]
+					if ((valid) && (!move[valid.keycode])) {
+						move[valid.keycode] = true;
+					}
+				}
+
+				state.imageData = baseImg;
+				state.similar = similar;
+
+			}
+			state.franMoves.push(move);
+		}
+	}
+
+	var move = state.franMoves.shift();
+	if (move) {
+		state.keyStates = {};
+		state.pressStates = {};
+		state.keyStates = move;
+		if(first == true) {
+			state.pressStates = move;
+		}
+
+		var keys = Object.keys(move);
+		var actions = Artsy.allActions;
+		var hasKeys = false;
+		for (var i = 0; i < actions.length; ++i) {
+			if(actions[i]["keycode"] > 0 && move[actions[i]["keycode"]] == true) {
+				hasKeys = true;
+				break;
+			}
+		}
+		if (hasKeys == false) {
+			state.franMoves = [];
+		}
+
+	}
+
+	return state
 }
