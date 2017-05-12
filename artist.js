@@ -655,11 +655,13 @@ Gallery.displayGallery = function() {
 				linkTag.setAttribute("rel","external");
 				linkTag.setAttribute("download","img.png");
 				newGallery.appendChild(linkTag);
+				imgTags.push(linkTag);
 			}
 			else {
 				newGallery.appendChild(imgTag);
+				imgTags.push(imgTag);
 			}
-			imgTags.push(imgTag);
+			
 			if(imgTags.length == images.length) {
 				while (newGallery.firstChild) {
 				    newGallery.removeChild(newGallery.firstChild);
@@ -2304,11 +2306,11 @@ Sounder.playSound = function(soundName) {
 /* functions */
 
 function uint32(x) {
-	return x >>> 0
+	return x >>> 0;
 }
 
 function underflowMod(x, max) {
-	return ((x % max) + max) % max
+	return ((x % max) + max) % max;
 }
 
 function getByteOffset(x,y,width,height) {
@@ -2768,11 +2770,11 @@ ImgFuncs.textify = function(imageData) {
 
 ImgFuncs.similar = function(imgDat1, imgDat2) {
 	var total = 0;
-	var length = imgDat1.width * imgDat1.height;
-	for (var i = 0; i < length; i++) {
-		var a = imgDat1.u8[i * 4] + imgDat1.u8[i * 4 + 1] + imgDat1.u8[i * 4 + 2];
-		var b = imgDat2.u8[i * 4] + imgDat2.u8[i * 4 + 1] + imgDat2.u8[i * 4 + 2];
-		var weight = (a / 3) - (b / 3);
+	var length = imgDat1.width * imgDat1.height * 4;
+	for (var i = 0; i < length; i+= 4) {
+		// var a = imgDat1.u8[i] + imgDat1.u8[i + 1] + imgDat1.u8[i + 2];
+		// var b = imgDat2.u8[i] + imgDat2.u8[i + 1] + imgDat2.u8[i + 2];
+		var weight = (imgDat1.u8[i] + imgDat1.u8[i + 1] + imgDat1.u8[i + 2] / 3) - (imgDat2.u8[i] + imgDat2.u8[i + 1] + imgDat2.u8[i + 2] / 3);
 		total += weight < 0 ? -weight : weight;
 	}
 	return total;
