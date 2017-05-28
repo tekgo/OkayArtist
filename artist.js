@@ -949,8 +949,10 @@ Artsy.actions.bandit = {
 	emotion: new Emotion(87,0,0,0,0,0),
 	action: function(state) {
 		var output = state.imageData
-		for (var x = 0; x < output.width; ++x) {
-			for (var y = 0; y < output.height; ++y) {
+		var width = output.width;
+		var height = output.height;
+		for (var x = 0; x < width; ++x) {
+			for (var y = 0; y < height; ++y) {
 				var rgb = ImgFuncs.getColorArr(output, x, y);
 				for (n=0; n<3; ++n)
 				{
@@ -980,17 +982,17 @@ Artsy.actions.magic = {
 			for (var y = 0; y < output.height; ++y) {
 				var r1 = ImgFuncs.getColorC(output, x, y, 0);
 				if(r1 > 32) {
-					var r2 = ImgFuncs.getColorC(output, underflowMod(x-1,output.width), y,0);
+					var r2 = ImgFuncs.getColorC(output, x-1, y,0);
 					r2 = Math.floor((r1 + r2) / 2);
-					ImgFuncs.setColorC(output, underflowMod(x-1,output.width), y, 0, r2);
+					ImgFuncs.setColorC(output, x-1, y, 0, r2);
 
-					var r3 = ImgFuncs.getColorC(output, underflowMod(x+1,output.width), underflowMod(y+1,output.height), 0);
+					var r3 = ImgFuncs.getColorC(output, x+1, y+1, 0);
 					++r3;
-					ImgFuncs.setColorC(output, underflowMod(x+1,output.width), underflowMod(y+1,output.height), 0, r3);
+					ImgFuncs.setColorC(output, x+1, y+1, 0, r3);
 
-					var r4 = ImgFuncs.getColorC(output, underflowMod(x+1,output.width), underflowMod(y-1,output.height), 0);
+					var r4 = ImgFuncs.getColorC(output,x+1, y-1, 0);
 					++r4;
-					ImgFuncs.setColorC(output, underflowMod(x+1,output.width), underflowMod(y-1,output.height), 0, r4);
+					ImgFuncs.setColorC(output, x+1, y-1, 0, r4);
 				}
 			}
 		}
@@ -1084,7 +1086,7 @@ Artsy.actions.SDL_SCANCODE_U = {
 			var pt = idxf(1);
 			var x2 = pt.x;
 			var y2 = pt.y;
-			var c2 = ImgFuncs.getColorArr(output, x2, y2);
+			var c2 = ImgFuncs.getColor32(output, x2, y2);
 			var x1 = x2;
 			var y1 = y2;
 			var pt2 = idxf(i+1)
@@ -1096,12 +1098,12 @@ Artsy.actions.SDL_SCANCODE_U = {
 				x2 = pt2.x;
 				y2 = pt2.y;
 				c1 = c2;
-				c2 = ImgFuncs.getColorArr(output, x2, y2);
+				c2 = ImgFuncs.getColor32(output, x2, y2);
 				var colors = swapf(ImgFuncs.lesser(c1,c2), ImgFuncs.greater(c1,c2));
 				var less = colors.a;
 				var great = colors.b;
-				ImgFuncs.setColorArr(output, x1, y1, less);
-				ImgFuncs.setColorArr(output, x2, y2, great);
+				ImgFuncs.setColor32(output, x1, y1, less);
+				ImgFuncs.setColor32(output, x2, y2, great);
 				c2 = great;
 			}
 		}
@@ -1126,16 +1128,16 @@ Artsy.actions.SDL_SCANCODE_P = {
 		var besides = state.ticks % 2;
 		function idxf(_i) {
 			var i = _i-1+besides;
-			return { x: underflowMod(i % output.width, output.width), y: underflowMod(Math.floor(i / output.width), output.height) }
+			return { x: i % output.width, y: Math.floor(i / output.width) }
 		}
 
-		for (var i = 0; i < max - 2; i+= 2) {
+		for (var i = 1; i < max - 2; i+= 2) {
 			var p1 = idxf(i);
 			var p2 = idxf(i+1);
-			var c1 = ImgFuncs.getColorArr(output, p1.x, p1.y);
-			var c2 = ImgFuncs.getColorArr(output, p2.x, p2.y);
-			ImgFuncs.setColorArr(output, p1.x, p1.y, c2);
-			ImgFuncs.setColorArr(output, p2.x, p2.y, c1);
+			var c1 = ImgFuncs.getColor32(output, p1.x, p1.y);
+			var c2 = ImgFuncs.getColor32(output, p2.x, p2.y);
+			ImgFuncs.setColor32(output, p1.x, p1.y, c2);
+			ImgFuncs.setColor32(output, p2.x, p2.y, c1);
 		}
 
 		state.imageData = output;
@@ -2337,10 +2339,23 @@ else {
 	}
 }
 
+// Gets a u32 for an idx value.
+ImgFuncs.getColor32Idx = function(imageData, idx) {
+	return ImgFuncs.fixEndian(imageData.u32[idx])
+}
+
+// Sets a u32 for an idx value.
+ImgFuncs.setColor32Idx = function(imageData, idx, color) {
+	imageData.u32[idx] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+}
+
 // Gets a u32 for an x,y coord.
 ImgFuncs.getColor32 = function(imageData, x, y) {
 	if (imageData.x128) {
 		return ImgFuncs.fixEndian(imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))]);
+	}
+	if (imageData.x512) {
+		return ImgFuncs.fixEndian(imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))]);
 	}
 	var width = imageData.width;
 	var height = imageData.height;
@@ -2352,6 +2367,10 @@ ImgFuncs.getColor32 = function(imageData, x, y) {
 ImgFuncs.setColor32 = function(imageData, x, y, color) {
 	if (imageData.x128) {
 		imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+		return
+	}
+	if (imageData.x512) {
+		imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
 		return
 	}
 	var width = imageData.width;
@@ -2368,11 +2387,14 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 		if (imageData.width == 128 && imageData.height == 128) {
 			imageData.x128 = true;
 		}
+		if (imageData.width == 512 && imageData.height == 512) {
+			imageData.x512 = true;
+		}
 	}
 
 	var u8 = imageData.u8;
 	if(!u8) {
-		u8 = new Uint8ClampedArray(imageData.data.buffer);
+		u8 = new Uint8Array(imageData.data.buffer);
 		imageData.u8 = u8;
 	}
 }
@@ -2380,21 +2402,26 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 // Gets a 3 item array for an x,y coord.
 ImgFuncs.getColorArr = function(imageData, x, y) {
 	var color = ImgFuncs.getColor32(imageData,x,y);
+	// return new Uint8Array([(color >> 24) & 0xff, (color >> (16)) & 0xff, (color >> (8)) & 0xff]);
 	return [(color >> 24) & 0xff, (color >> (16)) & 0xff, (color >> (8)) & 0xff];
 }
 
 // Gets a 3 item array for an x,y coord.
 ImgFuncs.setColorArr = function(imageData, x, y, color) {
-	ImgFuncs.setColor32(imageData,x,y, (((color[0] & 0xff) << 24) | 
+	var newColor = (((color[0] & 0xff) << 24) | 
               ((color[1] & 0xff) << 16) | 
               ((color[2] & 0xff) << 8) | 
-              (0xff)))
+              (0xff));
+	ImgFuncs.setColor32(imageData,x,y, newColor);
 }
 
 // Gets a channel value for an x,y coord.
 ImgFuncs.getColorC = function(imageData, x, y, c) {
 	if (imageData.x128) {
 		return imageData.u8[(((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127))) * 4) + c];
+	}
+	if (imageData.x512) {
+		return imageData.u8[(((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511))) * 4) + c];
 	}
 	var width = imageData.width;
 	var height = imageData.height;
@@ -2408,6 +2435,10 @@ ImgFuncs.setColorC = function(imageData, x, y,c, color) {
 		imageData.u8[(((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127))) * 4) + c] = ((~~color % 256) + 256) % 256;
 		return
 	}
+	if (imageData.x512) {
+		imageData.u8[(((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511))) * 4) + c] = ((~~color % 256) + 256) % 256;
+		return
+	}
 	var width = imageData.width;
 	var height = imageData.height;
 	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
@@ -2416,11 +2447,11 @@ ImgFuncs.setColorC = function(imageData, x, y,c, color) {
 
 // Converts a 3 item array to a uint32.
 ImgFuncs.arrTo32 = function(arr) {
-	var arr2 = arr.slice()
-	arr2.push(255)
-	for (var i = 0; i < arr2.length; ++i) {
-		arr2[i] = (~~arr2[i]) % 256
-	}
+	var arr2 = [ (~~arr[0]) & 255, (~~arr[1]) & 255, (~~arr[2]) & 255, 255];
+	// arr2.push(255)
+	// arr2[0] = (~~arr2[0]) & 255;
+	// arr2[1] = (~~arr2[1]) & 255;
+	// arr2[2] = (~~arr2[2]) & 255;
 	if (ImgFuncs.littleEndian == true) {
 		return uint32((arr2[3]) | 
               (arr2[2] << 8) | 
@@ -2565,12 +2596,27 @@ ImgFuncs.skewx_channel = function(surface, fx, fy, fw, fh, by, channel) {
 
 // Returns the lesser elements of each channel between two arrays.
 ImgFuncs.lesser = function(a, b) {
-	return [Math.min(a[0],b[0]),  Math.min(a[1],b[1]), Math.min(a[2],b[2])];
+	var r = Math.min((a >> 24) & 0xff, (b >> 24) & 0xff);
+	var g = Math.min((a >> 16) & 0xff, (b >> 16) & 0xff);
+	var b = Math.min((a >> 8) & 0xff, (b >> 8) & 0xff);
+
+	return (((r & 0xff) << 24) | 
+              ((g & 0xff) << 16) | 
+              ((b & 0xff) << 8) | 
+              (0xff));
 }
 
 // Returns the greater elements of each channel between two arrays.
 ImgFuncs.greater = function(a, b) {
-	return [Math.max(a[0],b[0]),  Math.max(a[1],b[1]), Math.max(a[2],b[2])];
+
+	var r = Math.max((a >> 24) & 0xff, (b >> 24) & 0xff);
+	var g = Math.max((a >> 16) & 0xff, (b >> 16) & 0xff);
+	var b = Math.max((a >> 8) & 0xff, (b >> 8) & 0xff);
+
+	return (((r & 0xff) << 24) | 
+              ((g & 0xff) << 16) | 
+              ((b & 0xff) << 8) | 
+              (0xff));
 }
 
 ImgFuncs.swap = function(a,b){ return {a: a, b: b} }
@@ -2650,7 +2696,7 @@ ImgFuncs.flipline = function (surface,x,y) {
 
 // Returns a copy of an image data object.
 ImgFuncs.copyData = function(imageData) {
-	var dataCopy = new Uint8ClampedArray(imageData.data);
+	var dataCopy = new Uint8Array(imageData.data);
 	var copy = new ImageData(imageData.width, imageData.height);
 	copy.data.set(dataCopy);
 	ImgFuncs.addBufferToImageData(copy);
@@ -2770,12 +2816,16 @@ ImgFuncs.textify = function(imageData) {
 
 ImgFuncs.similar = function(imgDat1, imgDat2) {
 	var total = 0;
+	var u81 = imgDat1.u8;
+	var u82 = imgDat2.u8;
 	var length = imgDat1.width * imgDat1.height * 4;
 	for (var i = 0; i < length; i+= 4) {
-		// var a = imgDat1.u8[i] + imgDat1.u8[i + 1] + imgDat1.u8[i + 2];
-		// var b = imgDat2.u8[i] + imgDat2.u8[i + 1] + imgDat2.u8[i + 2];
-		var weight = (imgDat1.u8[i] + imgDat1.u8[i + 1] + imgDat1.u8[i + 2] / 3) - (imgDat2.u8[i] + imgDat2.u8[i + 1] + imgDat2.u8[i + 2] / 3);
-		total += weight < 0 ? -weight : weight;
+		// var a = u81[i] + u81[i + 1] + u81[i + 2];
+		// var b = u82[i] + u82[i + 1] + u82[i + 2];
+		// var weight = (Math.abs(u81[i] - u82[i]) + Math.abs(u81[i + 1] - u82[i + 1]) + Math.abs(u81[i + 2] - u82[i + 2])) / 2
+		// var weight = (a - b) / 3
+		// total += weight < 0 ? -weight : weight;
+		total += Math.abs((u81[i] - u82[i]) + (u81[i + 1] - u82[i + 1]) + (u81[i + 2] - u82[i + 2])) / 3;
 	}
 	return total;
 }
@@ -2870,8 +2920,10 @@ Artsy.franIt = function(state) {
 
 			}
 			else {
-				var baseImg = ImgFuncs.copyData(state.imageData);
-				var similar = ImgFuncs.copyData(state.similar);
+				var baseImg = ImgFuncs.scaleImageData(state.imageData, 0.25);
+				var similar = ImgFuncs.scaleImageData(state.similar, 0.25);
+				var oimageData = state.imageData;
+				var osimilar = state.similar;
 				ImgFuncs.addBufferToImageData(baseImg);
 				ImgFuncs.addBufferToImageData(similar);
 				state.imageData = null;
@@ -2896,18 +2948,18 @@ Artsy.franIt = function(state) {
 
 				var max = emotions[0].weight;
 
-				emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 256 });
+				emotions = emotions.filter( function(e) { return Math.abs(e.weight - max) < 64 });
 
-				var num = Math.floor(Math.random() * 2) + 1;
-					for (var i = 0; i < num; ++i) {
+				var num = Math.floor(Math.random() * 8) + 1;
+				for (var i = 0; i < num; ++i) {
 					var valid = emotions[Math.floor(Math.random()*emotions.length)]
 					if ((valid) && (!move[valid.keycode])) {
 						move[valid.keycode] = true;
 					}
 				}
 
-				state.imageData = baseImg;
-				state.similar = similar;
+				state.imageData = oimageData;
+				state.similar = osimilar;
 
 			}
 			state.franMoves.push(move);
