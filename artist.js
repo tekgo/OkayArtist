@@ -191,7 +191,7 @@ Artsy.state = {
 Artsy.history = [];
 Artsy.historyTicks = 0;
 Artsy.tickHistory = 1;
-Artsy.maxHistory = 100;
+Artsy.maxHistory = 50;
 Artsy.addToHistory = function(imageData) {
 	if (Artsy.history.length >= Artsy.maxHistory) {
 		var newHistory = [];
@@ -630,22 +630,23 @@ Gallery.saveImageURL = function(url) {
 			return;
 		}
 	}
-	images.splice(0,0,url);
-	var string = JSON.stringify(images);
-	// Limit to 4 MB, don't use MiB just in case.
-	// Remove oldest images.
-	while(string.length > 1000 * 1000 * 4) {
-		images.pop(); // Remove oldest images.
-		string = JSON.stringify(images);
+	images.unshift(url);
+
+	var imagesToSave = images.slice();
+	var success = false;
+
+	while (imagesToSave.length > 0 && success == false) {
+		var stringToSave = JSON.stringify(imagesToSave);
+		try {
+		   window.localStorage.setItem("imageArray", stringToSave);
+		   success = true;
+		}
+		catch (e) {
+		   success = false;
+		   imagesToSave.pop();
+		}
 	}
 
-	// Local storage may fail if the user has private browsing on.
-	try {
-	   window.localStorage.setItem("imageArray", JSON.stringify(images));
-	}
-	catch (e) {
-	   console.log(e);
-	}
 	Gallery.images = images;
 }
 
