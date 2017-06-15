@@ -18,7 +18,7 @@
 		if(window.location.hash) {
 			var img = document.createElement("img");
 			var src = window.location.hash.substring(1); // Remove # character.
-			if (src.indexOf("data:image/png") == 0) {
+			if (src.indexOf("data:image/") == 0) {
 				img.src = src;
 				document.body.appendChild(img);
 			}

@@ -18,9 +18,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	-	Import initial setup.
 	-	Improved message text.
 	?	Better keyboard.
-	?	Image import.
 	?	Sound.
-	?	Endianess.
 */
 
 // An emotion is a object that sets how the auto-artist state
@@ -188,6 +186,25 @@ Artsy.state = {
 	mousePoint: {x: 0, y: 0},
 	similar: null,
 	similarImg: null,
+}
+
+Artsy.history = [];
+Artsy.historyTicks = 0;
+Artsy.tickHistory = 1;
+Artsy.maxHistory = 100;
+Artsy.addToHistory = function(imageData) {
+	if (Artsy.history.length >= Artsy.maxHistory) {
+		var newHistory = [];
+		for (var i = 1; i < Artsy.history.length; i += 2) {
+			newHistory.push(Artsy.history[i]);
+		}
+		Artsy.tickHistory *= 2;
+		Artsy.history = newHistory;
+	}
+	if ((Artsy.historyTicks % Artsy.tickHistory) == 0) {
+		Artsy.history.push(imageData);
+	}
+	Artsy.historyTicks++;
 }
 
 /* Lifecycle functions */
@@ -379,6 +396,7 @@ Artsy.update = function() {
 		}
 
 		Artsy.state.newLockedRegions = [];
+		Artsy.addToHistory(ImgFuncs.copyData(Artsy.state.imageData));
 	}
 
 	// Color the keys yellow if a key is being pressed.
@@ -568,13 +586,45 @@ Input.pointHandler = function(allPoints) {
 /* Save/load images */
 
 var Gallery = {
-	images: null
+	images: null,
+	giffer: null
 };
+
+Gallery.saveImageGroup = function(images) {
+	var gif = new GIF({
+		workers: 2,
+		quality: 30
+	});
+	Gallery.giffer = gif;
+
+	for (var i = 0; i < images.length; i++) {
+		gif.addFrame(images[i]);
+	}
+
+	gif.on('finished', function(blob) {
+		Gallery.blobToDataURL(blob, function(url) {
+			Gallery.saveImageURL(url);
+			Gallery.displayGallery(true);
+		});
+	});
+	gif.render();
+}
+
+Gallery.blobToDataURL = function(blob, callback) {
+    var a = new FileReader();
+    a.onload = function(e) {callback(e.target.result);}
+    a.readAsDataURL(blob);
+}
 
 // Stores images as data urls
 Gallery.saveImageData = function(imageData) {
-	var images = Gallery.getSavedImages();
 	var url = ImgFuncs.toDataURL(imageData);
+	Gallery.saveImageURL(url);
+}
+
+// Stores images as data urls
+Gallery.saveImageURL = function(url) {
+	var images = Gallery.getSavedImages();
 	for (var i = 0; i <images.length; ++i) {
 		if (images[i] == url) {
 			return;
@@ -615,11 +665,13 @@ Gallery.getSavedImages = function() {
 }
 
 // Displays all saved images. Does not display if there are no saved images.
-Gallery.displayGallery = function() {
+Gallery.displayGallery = function(force = false) {
 	var currentGallery = document.getElementById("gallery")
 	if (currentGallery) {
 		currentGallery.remove();
-		return;
+		if(force == false) {
+			return;
+		}
 	}
 	var images = Gallery.getSavedImages();
 	if(images.length <= 0) {
@@ -641,8 +693,11 @@ Gallery.displayGallery = function() {
 	for (var i = 0; i < images.length; ++i) {
 		var j = i;
 		ImgFuncs.loadImage(images[i], function(img) {
-			var data = ImgFuncs.fromImage(img);
-			var url = ImgFuncs.toDataURL(ImgFuncs.scaleImageData(data, 4));
+			var url = img.src;
+            if (img.src.indexOf("image/gif") == -1) {
+                var data = ImgFuncs.fromImage(img);
+                url = ImgFuncs.toDataURL(ImgFuncs.scaleImageData(data, 4));
+            }
 			var imgTag = document.createElement("img")
 			imgTag.src = url;
 			imgTag.setAttribute("download","img.png");
@@ -1485,6 +1540,9 @@ Artsy.actions.SDL_SCANCODE_RETURN = {
 	pressCode: 13, // 
 	action: function(state) {
 		Gallery.saveImageData(state.imageData);
+		var imageGroup = Artsy.history.slice();
+		imageGroup.push(state.imageData);
+		Gallery.saveImageGroup(imageGroup);
 		Sounder.playSound("sfx_1");
 		return Artsy.actions.Gallery.action(state);
 	}
@@ -2327,10 +2385,10 @@ ImgFuncs.littleEndian = ((new Uint32Array((new Uint8Array([1, 2, 3, 4])).buffer)
 
 if(ImgFuncs.littleEndian == true) {
 	ImgFuncs.fixEndian = function(number) {
-		return ((number >> 24) & 0xff) | // move byte 3 to byte 0
-			((number << 8) & 0xff0000) | // move byte 1 to byte 2
-			((number >> 8) & 0xff00) | // move byte 2 to byte 1
-			((number << 24) & 0xff000000); // byte 0 to byte 3
+		return ((number & 0xFF) << 24) // move byte 3 to byte 0
+           | ((number & 0xFF00) << 8) // move byte 1 to byte 2
+           | ((number >> 8) & 0xFF00) // move byte 2 to byte 1
+           | ((number >> 24) & 0xFF); // byte 0 to byte 3
 	}
 }
 else {
@@ -2339,44 +2397,46 @@ else {
 	}
 }
 
+var fixEndian = ImgFuncs.fixEndian;
+
 // Gets a u32 for an idx value.
 ImgFuncs.getColor32Idx = function(imageData, idx) {
-	return ImgFuncs.fixEndian(imageData.u32[idx])
+	return fixEndian(imageData.u32[idx])
 }
 
 // Sets a u32 for an idx value.
 ImgFuncs.setColor32Idx = function(imageData, idx, color) {
-	imageData.u32[idx] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+	imageData.u32[idx] = fixEndian(((color & 0xffffff00) | 0xff));
 }
 
 // Gets a u32 for an x,y coord.
 ImgFuncs.getColor32 = function(imageData, x, y) {
 	if (imageData.x128) {
-		return ImgFuncs.fixEndian(imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))]);
+		return fixEndian(imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))]);
 	}
 	if (imageData.x512) {
-		return ImgFuncs.fixEndian(imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))]);
+		return fixEndian(imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))]);
 	}
 	var width = imageData.width;
 	var height = imageData.height;
-	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height)));
-	return ImgFuncs.fixEndian(imageData.u32[byteOffset]);
+	var byteOffset = ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
+	return fixEndian(imageData.u32[byteOffset]);
 }
 
 // Sets a u32 for an x,y coord.
 ImgFuncs.setColor32 = function(imageData, x, y, color) {
 	if (imageData.x128) {
-		imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+		imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))] = fixEndian(((color & 0xffffff00) | 0xff));
 		return
 	}
 	if (imageData.x512) {
-		imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+		imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))] = fixEndian(((color & 0xffffff00) | 0xff));
 		return
 	}
 	var width = imageData.width;
 	var height = imageData.height;
-	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height)));
-	imageData.u32[byteOffset] = ImgFuncs.fixEndian(((color & 0xffffff00) | 0xff));
+	var byteOffset = ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
+	imageData.u32[byteOffset] = fixEndian(((color & 0xffffff00) | 0xff));
 }
 
 ImgFuncs.addBufferToImageData = function(imageData) {
@@ -2403,7 +2463,7 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 ImgFuncs.getColorArr = function(imageData, x, y) {
 	var color = ImgFuncs.getColor32(imageData,x,y);
 	// return new Uint8Array([(color >> 24) & 0xff, (color >> (16)) & 0xff, (color >> (8)) & 0xff]);
-	return [(color >> 24) & 0xff, (color >> (16)) & 0xff, (color >> (8)) & 0xff];
+	return [(color >> 24) & 0xff, (color >> 16) & 0xff, (color >> 8) & 0xff];
 }
 
 // Gets a 3 item array for an x,y coord.
@@ -2541,11 +2601,13 @@ ImgFuncs.findEdges = function(surface, channel, level, colorArr) {
 }
 
 ImgFuncs.skewx = function(surface, fx, fy, fw, fh, by) {
+	var get32 = ImgFuncs.getColor32;
+	var set32 = ImgFuncs.setColor32;
 	for (var y = 0; y < fh; ++y) {
 		var ny = underflowMod(fy+y, surface.height);
 		var line = new Array();
 		for (var x = 0; x < fw; ++x) {
-			line.push(ImgFuncs.getColorArr(surface, underflowMod(fx+x, surface.width), ny));
+			line.push(get32(surface, underflowMod(fx+x, surface.width), ny));
 		}
 		for (var x = 0; x < fw; ++x) {
 			var c1 = line[x];
@@ -2553,17 +2615,19 @@ ImgFuncs.skewx = function(surface, fx, fy, fw, fh, by) {
 			if (off < 0) { 
 				off = off + fw;
 			}
-			ImgFuncs.setColorArr(surface, underflowMod(off,surface.width), ny, c1);
+			set32(surface, underflowMod(off,surface.width), ny, c1);
 		}
 	}
 }
 
 ImgFuncs.skewy = function(surface, fx, fy, fw, fh, by) {
+	var get32 = ImgFuncs.getColor32;
+	var set32 = ImgFuncs.setColor32;
 	for (var x = 0; x < fw; ++x) {
 		var nx = underflowMod(fx+x, surface.width);
 		var line = new Array();
 		for (var y = 0; y < fh; ++y) {
-			line.push(ImgFuncs.getColorArr(surface, nx, underflowMod(fy+y, surface.height)));
+			line.push(get32(surface, nx, underflowMod(fy+y, surface.height)));
 		}
 		for (var y = 0; y < fh; ++y) {
 			var c1 = line[y];
@@ -2571,17 +2635,19 @@ ImgFuncs.skewy = function(surface, fx, fy, fw, fh, by) {
 			if (off < 0) { 
 				off = off + fh;
 			}
-			ImgFuncs.setColorArr(surface, nx, underflowMod(off,surface.height), c1);
+			set32(surface, nx, underflowMod(off,surface.height), c1);
 		}
 	}
 }
 
 ImgFuncs.skewx_channel = function(surface, fx, fy, fw, fh, by, channel) {
+	var get32c = ImgFuncs.getColorC;
+	var set32c = ImgFuncs.setColorC;
 	for (var y = 0; y < fh; ++y) {
 		var ny = underflowMod(fy+y, surface.height);
 		var line = [];
 		for (var x = 0; x < fw; ++x) {
-			line.push(ImgFuncs.getColorC(surface, fx+x, ny, channel));
+			line.push(get32c(surface, fx+x, ny, channel));
 		}
 		for (var x = 0; x < fw; ++x) {
 			var channelValue = line[x];
@@ -2589,7 +2655,7 @@ ImgFuncs.skewx_channel = function(surface, fx, fy, fw, fh, by, channel) {
 			if (off < 0) { 
 				off = off + fw;
 			}
-			ImgFuncs.setColorC(surface, off, ny, channel, channelValue);
+			set32c(surface, off, ny, channel, channelValue);
 		}
 	}
 }
