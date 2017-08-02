@@ -717,6 +717,9 @@ Input.gamepadConnected = function(event) {
 	gamepadPlayer.gamepad = event.gamepad;
 	gamepadPlayer.gamepadState = new GamepadState();
 	gamepadPlayer.currentTool = Input.randomTool;
+	var newBrush = Input.randomBrush();
+	gamepadPlayer.brushType = newBrush.brushType;
+	gamepadPlayer.brushSize = newBrush.brushSize;
 	Players.gamepads.push(gamepadPlayer);
 }
 
@@ -740,6 +743,15 @@ Input.randomTool = function() {
 	return tools[Math.floor(Math.rand() * tools.length)];
 }
 
+Input.randomBrush = function() {
+	var brushType = Math.floor(Math.rand() * 9);
+	var brushSize = Math.floor(Math.rand() * 72);
+	if (brushType == 7) {
+		brushSize = Math.ceil(brushSize / 2);
+	}
+	return {brushType: brushType, brushSize: brushSize};
+}
+
 // https://w3c.github.io/gamepad/#remapping
 Input.updateInputs = function() {
 	for (var i = 0; i < Players.gamepads.length; i++) {
@@ -757,13 +769,9 @@ Input.updateInputs = function() {
 
 		// Change brush
 		if (newState.cButton != oldState.cButton && !!newState.cButton) {
-			var brushNum = Math.floor(Math.rand() * 9);
-			var brushSize = Math.floor(Math.rand() * 72);
-			if (brushNum == 7) {
-				brushSize = Math.ceil(brushSize / 2);
-			}
-			gamepadPlayer.brushType = brushNum;
-			gamepadPlayer.brushSize = brushSize;
+			var newBrush = Input.randomBrush();
+			gamepadPlayer.brushType = newBrush.brushType;
+			gamepadPlayer.brushSize = newBrush.brushSize;
 		}
 
 		var currentTool = gamepadPlayer.currentTool;
