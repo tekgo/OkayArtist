@@ -94,14 +94,18 @@ function Player(id, color) {
 	}
 }
 
-Players = {};
+var Players = {
+	gamepads : new Array()
+};
 
 Players.keyboard = new Player("keyboard","rgba(255,255,0,0.5)");
 
 Players.autoArtist = new Player("autoArtist","rgba(255,0,255,0.5)");
 
-Players.all = [Players.keyboard, Players.autoArtist];
-
+Players.all = function() {
+	var base = [Players.keyboard, Players.autoArtist];
+	return base.concat(Players.gamepads);
+};
 
 // A touch key is a region of a touch surface that when touched simulates a keypress.
 function TouchKey(keyCode, x, y, w, h) {
@@ -219,12 +223,8 @@ Artsy.state = {
 	ticks: 0,
 	blip: true,
 	saveState: null,
-	touches: new Array(),
-	mouseDown: false,
-	mousePoint: {x: 0, y: 0},
 	similar: null,
-	similarImg: null,
-	gamepads: new Array()
+	similarImg: null
 }
 
 Artsy.history = [];
@@ -371,7 +371,7 @@ Artsy.update = function() {
 	Artsy.state = Artsy.franIt(Artsy.state);
 	ImgFuncs.addBufferToImageData(Artsy.state.imageData);
 
-	var players = Players.all
+	var players = Players.all()
 
 	for (var i = 0; i < players.length; i++) {
 		var player = players[i];
@@ -532,7 +532,12 @@ Artsy.findAllBrushes = function() {
 
 /* Event Handlers */
 
-var Input = {};
+var Input = {
+	touches: new Array(),
+	mouseDown: false,
+	mousePoint: {x: 0, y: 0},
+	gamepads: new Array()
+};
 
 Input.keyDownHandler = function(e) {
 	var keyCode = e.keyCode;
@@ -574,25 +579,25 @@ Input.keyUpHandler = function(e) {
 }
 
 Input.mouseDownHandler = function(e) {
-	Artsy.state.mouseDown = true;
-	Artsy.state.mousePoint = {x: e.clientX, y: e.clientY};
+	Input.mouseDown = true;
+	Input.mousePoint = {x: e.clientX, y: e.clientY};
 	Input.mouseHandler();
 }
 
 Input.mouseUpHandler = function(e) {
-	Artsy.state.mouseDown = false;
-	Artsy.state.mousePoint = {x: e.clientX, y: e.clientY};
+	Input.mouseDown = false;
+	Input.mousePoint = {x: e.clientX, y: e.clientY};
 	Input.mouseHandler();
 }
 
 Input.mouseMoveHandler = function(e) {
-	Artsy.state.mousePoint = {x: e.clientX, y: e.clientY};
+	Input.mousePoint = {x: e.clientX, y: e.clientY};
 	Input.mouseHandler();
 }
 
 Input.mouseHandler = function() {
-	if (Artsy.state.mouseDown == true) {
-		Input.pointHandler([Artsy.state.mousePoint]);
+	if (Input.mouseDown == true) {
+		Input.pointHandler([Input.mousePoint]);
 	}
 	else {
 		Input.pointHandler([]);
@@ -601,12 +606,12 @@ Input.mouseHandler = function() {
 
 Input.touchMoveHandler = function(e) {
 	e.preventDefault();
-	Artsy.state.touches = e.touches;
+	Input.touches = e.touches;
 	var keyboard = Artsy.keyboard;
 	var allPoints = [];
-	for (var i = 0; i < Artsy.state.touches.length; ++i) {
-		var x = Artsy.state.touches[i].clientX;
-		var y = Artsy.state.touches[i].clientY;
+	for (var i = 0; i < Input.touches.length; ++i) {
+		var x = Input.touches[i].clientX;
+		var y = Input.touches[i].clientY;
 		allPoints.push({x: x, y: y});
 	}
 	Input.pointHandler(allPoints);
@@ -656,15 +661,140 @@ Input.pointHandler = function(allPoints) {
 
 /* Gamepad API */
 
+function GamepadState(gamepad) {
+	this.up = false;
+	this.down = false;
+	this.left = false;
+	this.right = false;
+	this.aButton = false;
+	this.bButton = false;
+	this.cButton = false;
+
+	if (!!gamepad) {
+		if (gamepad.buttons[12].pressed) {
+			this.up = true;
+		}
+		if (gamepad.buttons[13].pressed) {
+			this.down = true;
+		}
+		if (gamepad.buttons[14].pressed) {
+			this.left = true;
+		}
+		if (gamepad.buttons[15].pressed) {
+			this.right = true;
+		}
+		if (gamepad.buttons[0].pressed) {
+			this.aButton = true;
+		}
+		if (gamepad.buttons[1].pressed) {
+			this.bButton = true;
+		}
+		if (gamepad.buttons[2].pressed) {
+			this.cButton = true;
+		}
+
+		// Axes range from -1.0 - 1.0, keeping a 0.25-ish deadzone?
+		if (gamepad.axes[0] < -0.25) {
+			this.left = true
+		}
+		if (gamepad.axes[0] > 0.25) {
+			this.right = true
+		}
+		if (gamepad.axes[1] < -0.25) {
+			this.up = true
+		}
+		if (gamepad.axes[1] > 0.25) {
+			this.down = true
+		}
+	}
+}
+
 Input.gamepadConnected = function(event) {
 	console.log(event.gamepad);
+	Input.gamepads.push(event.gamepad);
+
+	var gamepadPlayer = new Player();
+	gamepadPlayer.gamepad = event.gamepad;
+	gamepadPlayer.gamepadState = new GamepadState();
+	gamepadPlayer.currentTool = Input.randomTool;
+	Players.gamepads.push(gamepadPlayer);
 }
 
 Input.gamepadDisconnected = function(event) {
 	console.log(event.gamepad);
+	var idx = Input.gamepads.indexOf(event.gamepad);
+	if (idx > -1) {
+		Input.gamepads.splice(idx,1);
+	}
+
+	for (var i = 0; i < Players.gamepads.length; i++) {
+		if (Players.gamepads[i].gamepad.index == event.gamepad.index) {
+			Players.gamepads[i].isActive = false;
+		}
+	}
 }
 
+Input.randomTool = function() {
+	var tools = [87,69,82,84,89,85,73,79,80,65,68,70,72,74,75,76,86,66,77,189,38,40,37,39,32];
+
+	return tools[Math.floor(Math.rand() * tools.length)];
+}
+
+// https://w3c.github.io/gamepad/#remapping
 Input.updateInputs = function() {
+	for (var i = 0; i < Players.gamepads.length; i++) {
+		var gamepadPlayer = Players.gamepads[i];
+		var oldState = gamepadPlayer.gamepadState;
+		var newState = new GamepadState(gamepadPlayer);
+
+		// Change tool
+		if (newState.bButton != oldState.bButton && !!newState.bButton) {
+			var prevTool = gamepadPlayer.prevTool;
+			gamepadPlayer.keyStates[prevTool] = false;
+			gamepadPlayer.pressStates[prevTool] = false;
+			gamepadPlayer.currentTool = Input.randomTool();
+		}
+
+		// Change brush
+		if (newState.cButton != oldState.cButton && !!newState.cButton) {
+			var brushNum = Math.floor(Math.rand() * 9);
+			var brushSize = Math.floor(Math.rand() * 72);
+			if (brushNum == 7) {
+				brushSize = Math.ceil(brushSize / 2);
+			}
+			gamepadPlayer.brushType = brushNum;
+			gamepadPlayer.brushSize = brushSize;
+		}
+
+		var currentTool = gamepadPlayer.currentTool;
+
+		// Use tool
+		if (newState.aButton == true && !!currentTool) {
+			if (gamepadPlayer.keyStates[currentTool] == false) {
+				gamepadPlayer.pressStates[currentTool] = true;
+			}
+			gamepadPlayer.keyStates[currentTool] = true;
+		}
+
+		if (newState.up != oldState.up) {
+			gamepadPlayer.keyStates[81] = newState.up;
+			gamepadPlayer.pressStates[81] = newState.up;
+		}
+		if (newState.down != oldState.down) {
+			gamepadPlayer.keyStates[78] = newState.down;
+			gamepadPlayer.pressStates[78] = newState.down;
+		}
+		if (newState.left != oldState.left) {
+			gamepadPlayer.keyStates[90] = newState.left;
+			gamepadPlayer.pressStates[90] = newState.left;
+		}
+		if (newState.right != oldState.right) {
+			gamepadPlayer.keyStates[67] = newState.right;
+			gamepadPlayer.pressStates[67] = newState.right;
+		}
+
+		gamepadPlayer.gamepadState = newState;
+	}
 }
 
 /* Save/load images */
