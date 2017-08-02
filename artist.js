@@ -64,6 +64,44 @@ function Emotion(keycode, joy, fear, disgust, anger, sadness) {
 	}
 }
 
+function Player(id, color) {
+	this.id = id;
+	this.isActive = true;
+	this.keyStates = {};
+	this.pressStates = {};
+	this.brushPoint = {
+		x: 50,
+		y: 50
+	};
+	this.brushType = 0;
+	this.brushSize = 1;
+	this.color = color;
+
+	this.writeState = function(state) {
+		state.keyStates = this.keyStates;
+		state.pressStates = this.pressStates;
+		state.brushPoint = this.brushPoint;
+		state.brushType = this.brushType;
+		state.brushSize = this.brushSize;
+	}
+
+	this.readState = function(state) {
+		this.keyStates = state.keyStates;
+		this.pressStates = state.pressStates;
+		this.brushPoint = state.brushPoint;
+		this.brushType = state.brushType;
+		this.brushSize = state.brushSize;
+	}
+}
+
+Players = {};
+
+Players.keyboard = new Player("keyboard","rgba(255,255,0,0.5)");
+
+Players.autoArtist = new Player("autoArtist","rgba(255,0,255,0.5)");
+
+Players.all = [Players.keyboard, Players.autoArtist];
+
 
 // A touch key is a region of a touch surface that when touched simulates a keypress.
 function TouchKey(keyCode, x, y, w, h) {
@@ -186,6 +224,7 @@ Artsy.state = {
 	mousePoint: {x: 0, y: 0},
 	similar: null,
 	similarImg: null,
+	gamepads: new Array()
 }
 
 Artsy.history = [];
@@ -238,6 +277,8 @@ Artsy.start = function() {
 	main.addEventListener("mousedown", Input.mouseDownHandler, false);
 	main.addEventListener("mouseup", Input.mouseUpHandler, false);
 	main.addEventListener("mousemove", Input.mouseMoveHandler, false);
+	main.addEventListener("gamepadconnected", Input.gamepadConnected, false);
+	main.addEventListener("gamepaddisconnected", Input.gamepadDisconnected, false);
 
 	Artsy.allActions = Artsy.findAllActions();
 	Artsy.update();
@@ -293,34 +334,55 @@ Artsy.readfiles = function(files, similar) {
 	}
 }
 
-// Per frame update.
-Artsy.update = function() {
-	++Artsy.state.ticks;
-	var copy = ImgFuncs.copyData(Artsy.state.imageData);
-
-	Artsy.state = Artsy.franIt(Artsy.state);
-	ImgFuncs.addBufferToImageData(Artsy.state.imageData);
-
+Artsy.performActionsForState = function(state) {
 	var actions = Artsy.allActions;
 	for (var i = 0; i < actions.length; ++i) {
 		var action = actions[i];
 		var keyCode = action["keycode"];
 		if (keyCode > 0) {
-			if (Artsy.state.keyStates[keyCode] == true) {
-				Artsy.state = action.action(Artsy.state);
-				Artsy.state.canvasNeedsUpdate = true;
+			if (state.keyStates[keyCode] == true) {
+				state = action.action(state);
+				state.canvasNeedsUpdate = true;
 			}
 		}
 		var keyCode = action["pressCode"];
 		if (keyCode > 0) {
-			if (Artsy.state.pressStates[keyCode] == true) {
-				Artsy.state = action.action(Artsy.state);
-				Artsy.state.canvasNeedsUpdate = true;
+			if (state.pressStates[keyCode] == true) {
+				state = action.action(state);
+				state.canvasNeedsUpdate = true;
 			}
 		}
 	}
 
-	Artsy.state.pressStates = {};
+	return state;
+}
+
+// Per frame update.
+Artsy.update = function() {
+	++Artsy.state.ticks;
+
+	// Dupe the imageData for locked region support.
+	var copy = ImgFuncs.copyData(Artsy.state.imageData);
+
+	// Update non-keyboard/touch inputsd.
+	Input.updateInputs();
+
+	// Run the auto-artist.
+	Artsy.state = Artsy.franIt(Artsy.state);
+	ImgFuncs.addBufferToImageData(Artsy.state.imageData);
+
+	var players = Players.all
+
+	for (var i = 0; i < players.length; i++) {
+		var player = players[i];
+		if (player.isActive) {
+			player.writeState(Artsy.state);
+			// Perform all actions.
+			Artsy.state = Artsy.performActionsForState(Artsy.state);
+			Artsy.state.pressStates = {};
+			player.readState(Artsy.state);
+		}
+	}
 
 	if (Artsy.state.canvasNeedsUpdate == true) {
 
@@ -349,10 +411,15 @@ Artsy.update = function() {
 
 		// Draw the brush point.
 		if (Artsy.state.blip == true) {
-			ctx.beginPath();
-			ctx.arc(Artsy.state.brushPoint.x, Artsy.state.brushPoint.y, 2, 0, 2 * Math.PI, false);
-			ctx.fillStyle = "rgba(255,255,0,0.5)";
-			ctx.fill();
+			for (var i = 0; i < players.length; i++) {
+				var player = players[i];
+				if (player.isActive) {
+					ctx.beginPath();
+					ctx.arc(player.brushPoint.x, player.brushPoint.y, 2, 0, 2 * Math.PI, false);
+					ctx.fillStyle = player.color;
+					ctx.fill();
+				}
+			}
 		}
 
 		Artsy.canvasNeedsUpdate = false;
@@ -471,8 +538,8 @@ Input.keyDownHandler = function(e) {
 	var keyCode = e.keyCode;
 
 	if (keyCode == 192) { // Tilde
-		Artsy.state.pressStates = {};
-		Artsy.state.keyStates = {};
+		Players.keyboard.pressStates = {};
+		Players.keyboard.keyStates = {};
 		Artsy.state.fran = !Artsy.state.fran;
 		Artsy.state.mouseDown = false
 		Artsy.state.touches = [];
@@ -480,25 +547,29 @@ Input.keyDownHandler = function(e) {
 	else {
 		if (Artsy.state.fran) {
 		Artsy.state.fran = false;
-		Artsy.state.pressStates = {};
-		Artsy.state.keyStates = {};
+		Players.autoArtist.pressStates = {};
+		Players.autoArtist.keyStates = {};
 		}
-		if (!Artsy.state.keyStates[keyCode]) {
-			Artsy.state.pressStates[keyCode] = true;
+		if (!Players.keyboard.keyStates[keyCode]) {
+			Players.keyboard.pressStates[keyCode] = true;
 		}
-		Artsy.state.keyStates[keyCode] = true;
+		Players.keyboard.keyStates[keyCode] = true;
 		Artsy.state.haskeyed = true;
 	}
+
+	Players.autoArtist.isActive = Artsy.state.fran;
+	Players.keyboard.isActive = !Artsy.state.fran;
+
 }
 
 Input.keyUpHandler = function(e) {
 	var keyCode = e.keyCode || e.which;
-	Artsy.state.keyStates[keyCode] = false;
+	Players.keyboard.keyStates[keyCode] = false;
 
 	// iPad bluetooth keyboards emit only keyCode 0 for keyup.
 	if (keyCode == 0) {
-		Artsy.state.keyStates = {};
-		Artsy.state.pressStates = {};
+		Players.keyboard.keyStates = {};
+		Players.keyboard.pressStates = {};
 	}
 }
 
@@ -581,6 +652,19 @@ Input.pointHandler = function(allPoints) {
 			}
 		}
 	}
+}
+
+/* Gamepad API */
+
+Input.gamepadConnected = function(event) {
+	console.log(event.gamepad);
+}
+
+Input.gamepadDisconnected = function(event) {
+	console.log(event.gamepad);
+}
+
+Input.updateInputs = function() {
 }
 
 /* Save/load images */
@@ -3035,11 +3119,11 @@ Artsy.franIt = function(state) {
 
 	var move = state.franMoves.shift();
 	if (move) {
-		state.keyStates = {};
-		state.pressStates = {};
-		state.keyStates = move;
+		Players.autoArtist.keyStates = {};
+		Players.autoArtist.pressStates = {};
+		Players.autoArtist.keyStates = move;
 		if(first == true) {
-			state.pressStates = move;
+			Players.autoArtist.pressStates = move;
 		}
 
 		var keys = Object.keys(move);
