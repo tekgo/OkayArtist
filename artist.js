@@ -761,6 +761,7 @@ Input.updateInputs = function() {
 	if(!!navigator.getGamepads) {
 		gamepads = navigator.getGamepads();
 	}
+	var changed = false;
 
 	for (var i = 0; i < Players.gamepads.length; i++) {
 		var gamepadPlayer = Players.gamepads[i];
@@ -780,6 +781,7 @@ Input.updateInputs = function() {
 			gamepadPlayer.keyStates[prevTool] = false;
 			gamepadPlayer.pressStates[prevTool] = false;
 			gamepadPlayer.currentTool = Input.randomTool();
+			changed = true;
 		}
 
 		// Change brush
@@ -787,6 +789,7 @@ Input.updateInputs = function() {
 			var newBrush = Input.randomBrush();
 			gamepadPlayer.brushType = newBrush.brushType;
 			gamepadPlayer.brushSize = newBrush.brushSize;
+			changed = true;
 		}
 
 		var currentTool = gamepadPlayer.currentTool;
@@ -797,6 +800,7 @@ Input.updateInputs = function() {
 				gamepadPlayer.pressStates[currentTool] = newState.aButton;
 			}
 			gamepadPlayer.keyStates[currentTool] = newState.aButton;
+			changed = true;
 		}
 		else {
 			gamepadPlayer.pressStates[currentTool] = false;
@@ -807,21 +811,30 @@ Input.updateInputs = function() {
 		if (newState.up != oldState.up) {
 			gamepadPlayer.keyStates[81] = newState.up;
 			gamepadPlayer.pressStates[81] = newState.up;
+			changed = true;
 		}
 		if (newState.down != oldState.down) {
 			gamepadPlayer.keyStates[78] = newState.down;
 			gamepadPlayer.pressStates[78] = newState.down;
+			changed = true;
 		}
 		if (newState.left != oldState.left) {
 			gamepadPlayer.keyStates[90] = newState.left;
 			gamepadPlayer.pressStates[90] = newState.left;
+			changed = true;
 		}
 		if (newState.right != oldState.right) {
 			gamepadPlayer.keyStates[67] = newState.right;
 			gamepadPlayer.pressStates[67] = newState.right;
+			changed = true;
 		}
 
 		gamepadPlayer.gamepadState = newState;
+	}
+	if (changed == true) {
+		Artsy.state.haskeyed = true;
+		Artsy.state.fran = false;
+		Players.autoArtist.isActive = Artsy.state.fran;
 	}
 }
 
