@@ -277,8 +277,8 @@ Artsy.start = function() {
 	main.addEventListener("mousedown", Input.mouseDownHandler, false);
 	main.addEventListener("mouseup", Input.mouseUpHandler, false);
 	main.addEventListener("mousemove", Input.mouseMoveHandler, false);
-	main.addEventListener("gamepadconnected", Input.gamepadConnected, false);
-	main.addEventListener("gamepaddisconnected", Input.gamepadDisconnected, false);
+	window.addEventListener("gamepadconnected", Input.gamepadConnected, false);
+	window.addEventListener("gamepaddisconnected", Input.gamepadDisconnected, false);
 
 	Artsy.allActions = Artsy.findAllActions();
 	Artsy.update();
@@ -671,17 +671,19 @@ function GamepadState(gamepad) {
 	this.cButton = false;
 
 	if (!!gamepad) {
-		if (gamepad.buttons[12].pressed) {
-			this.up = true;
-		}
-		if (gamepad.buttons[13].pressed) {
-			this.down = true;
-		}
-		if (gamepad.buttons[14].pressed) {
-			this.left = true;
-		}
-		if (gamepad.buttons[15].pressed) {
-			this.right = true;
+		if (gamepad.mapping == "standard") {
+			if (gamepad.buttons[12].pressed) {
+				this.up = true;
+			}
+			if (gamepad.buttons[13].pressed) {
+				this.down = true;
+			}
+			if (gamepad.buttons[14].pressed) {
+				this.left = true;
+			}
+			if (gamepad.buttons[15].pressed) {
+				this.right = true;
+			}
 		}
 		if (gamepad.buttons[0].pressed) {
 			this.aButton = true;
@@ -740,12 +742,12 @@ Input.gamepadDisconnected = function(event) {
 Input.randomTool = function() {
 	var tools = [87,69,82,84,89,85,73,79,80,65,68,70,72,74,75,76,86,66,77,189,38,40,37,39,32];
 
-	return tools[Math.floor(Math.rand() * tools.length)];
+	return tools[Math.floor(Math.random() * tools.length)];
 }
 
 Input.randomBrush = function() {
-	var brushType = Math.floor(Math.rand() * 9);
-	var brushSize = Math.floor(Math.rand() * 72);
+	var brushType = Math.floor(Math.random() * 9);
+	var brushSize = Math.floor(Math.random() * 72);
 	if (brushType == 7) {
 		brushSize = Math.ceil(brushSize / 2);
 	}
@@ -754,14 +756,27 @@ Input.randomBrush = function() {
 
 // https://w3c.github.io/gamepad/#remapping
 Input.updateInputs = function() {
+
+	var gamepads = new Array();
+	if(!!navigator.getGamepads) {
+		gamepads = navigator.getGamepads();
+	}
+
 	for (var i = 0; i < Players.gamepads.length; i++) {
 		var gamepadPlayer = Players.gamepads[i];
 		var oldState = gamepadPlayer.gamepadState;
-		var newState = new GamepadState(gamepadPlayer);
+
+		for (var j = 0; j < gamepads.length; j++) {
+			if (gamepads[j].index == gamepadPlayer.gamepad.index) {
+				gamepadPlayer.gamepad = gamepads[j];
+			}
+		}
+
+		var newState = new GamepadState(gamepadPlayer.gamepad);
 
 		// Change tool
 		if (newState.bButton != oldState.bButton && !!newState.bButton) {
-			var prevTool = gamepadPlayer.prevTool;
+			var prevTool = gamepadPlayer.currentTool;
 			gamepadPlayer.keyStates[prevTool] = false;
 			gamepadPlayer.pressStates[prevTool] = false;
 			gamepadPlayer.currentTool = Input.randomTool();
@@ -779,9 +794,14 @@ Input.updateInputs = function() {
 		// Use tool
 		if (newState.aButton == true && !!currentTool) {
 			if (gamepadPlayer.keyStates[currentTool] == false) {
-				gamepadPlayer.pressStates[currentTool] = true;
+				gamepadPlayer.pressStates[currentTool] = newState.aButton;
 			}
-			gamepadPlayer.keyStates[currentTool] = true;
+			gamepadPlayer.keyStates[currentTool] = newState.aButton;
+		}
+		else {
+			gamepadPlayer.pressStates[currentTool] = false;
+			gamepadPlayer.keyStates[currentTool] = false;
+
 		}
 
 		if (newState.up != oldState.up) {
