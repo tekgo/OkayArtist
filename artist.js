@@ -768,7 +768,7 @@ Input.updateInputs = function() {
 		var oldState = gamepadPlayer.gamepadState;
 
 		for (var j = 0; j < gamepads.length; j++) {
-			if (gamepads[j].index == gamepadPlayer.gamepad.index) {
+			if (!!gamepads[j] && gamepads[j].index == gamepadPlayer.gamepad.index) {
 				gamepadPlayer.gamepad = gamepads[j];
 			}
 		}
