@@ -102,8 +102,11 @@ Players.keyboard = new Player("keyboard","rgba(255,255,0,0.5)");
 
 Players.autoArtist = new Player("autoArtist","rgba(255,0,255,0.5)");
 
+Players.midi = new Player("midi","rgba(0,255,255,0.5)");
+Players.midi.isActive = false;
+
 Players.all = function() {
-	var base = [Players.keyboard, Players.autoArtist];
+	var base = [Players.keyboard, Players.autoArtist, Players.midi];
 	return base.concat(Players.gamepads);
 };
 
@@ -298,6 +301,8 @@ Artsy.start = function() {
 		e.preventDefault();
 		Artsy.readfiles(e.dataTransfer.files, true);
 	}
+
+	Input.requestMIDIAccess();
 
 };
 
@@ -739,6 +744,87 @@ Input.gamepadDisconnected = function(event) {
 	}
 }
 
+/* MIDI Input */
+
+Input.midiAccess = null;
+Input.midiEventQueue = new Array();
+
+Input.requestMIDIAccess = function() {
+
+	function startListening( midiAccess ) {
+		/* reset midiInputs here */
+		Players.midi.isActive = false;
+		for (var entry of midiAccess.inputs) {
+			entry[1].onmidimessage = function (e) { Input.onMIDIMessage(e) };
+			Players.midi.isActive = true;
+		}
+	}
+
+	function onMIDISuccess( midiAccess ) {
+		console.log( "MIDI ready!" );
+		Input.midiAccess = midiAccess;
+		startListening(midiAccess);
+		midiAccess.onstatechange = function() { startListening(midiAccess) };
+	}
+
+	function onMIDIFailure(msg) {
+		console.log( "Failed to get MIDI access - " + msg );
+	}
+
+	if (!!navigator.requestMIDIAccess) { 
+		navigator.requestMIDIAccess().then( onMIDISuccess, onMIDIFailure );
+	}
+}
+
+Input.onMIDIMessage = function (event) {
+	Input.midiEventQueue.push(event);
+}
+
+Input.processMidiEvent = function (event) {
+
+	// We currently only care about events with at least 3 data bytes.
+	if (event.data.length < 3) {
+		return null;
+	}
+
+	var control = event.data[0];
+	var channel = control % 16;
+	control = Math.floor(control / 16) - 8;
+
+	var key = event.data[1];
+	var value = event.data[2];
+
+	if (control == 1 && value == 0) {
+		control = 0;
+	}
+
+	if (control == 3) {
+		return {
+			type : "off",
+			channel : channel,
+			key : 0,
+			value : 0,
+			target : event.target
+		};
+	}
+
+	if (control == 0 || control == 1) {
+
+		return {
+			type : "note",
+			channel : channel,
+			key : key,
+			value : (control > 0),
+			target : event.target
+		};
+	}
+
+	return null;
+}
+
+
+/* Input loop */
+
 Input.randomTool = function() {
 	var tools = [87,69,82,84,89,85,73,79,80,65,68,70,72,74,75,76,86,66,77,189,38,40,37,39,32];
 
@@ -754,14 +840,30 @@ Input.randomBrush = function() {
 	return {brushType: brushType, brushSize: brushSize};
 }
 
-// https://w3c.github.io/gamepad/#remapping
 Input.updateInputs = function() {
+
+	var changed = false;
+
+	changed = changed | Input.updateGamepads();
+
+	changed = changed | Input.updateMIDI();
+	
+	if (changed == true) {
+		Artsy.state.haskeyed = true;
+		Artsy.state.fran = false;
+		Players.autoArtist.isActive = Artsy.state.fran;
+	}
+}
+
+// https://w3c.github.io/gamepad/#remapping
+Input.updateGamepads = function() {
+
+	var changed = false;
 
 	var gamepads = new Array();
 	if(!!navigator.getGamepads) {
 		gamepads = navigator.getGamepads();
 	}
-	var changed = false;
 
 	for (var i = 0; i < Players.gamepads.length; i++) {
 		var gamepadPlayer = Players.gamepads[i];
@@ -831,11 +933,108 @@ Input.updateInputs = function() {
 
 		gamepadPlayer.gamepadState = newState;
 	}
-	if (changed == true) {
-		Artsy.state.haskeyed = true;
-		Artsy.state.fran = false;
-		Players.autoArtist.isActive = Artsy.state.fran;
+
+	return changed;
+}
+
+var midiAction = function(type, value) {
+	return { "type": type, "value": value }
+}
+
+Input.updateMIDI = function() {
+
+	var genericDict = {
+		"channel" : {
+			"2" : {
+				48 : midiAction("keypress", 112), // F1
+				49 : midiAction("keypress", 113), // F2
+				50 : midiAction("keypress", 114), // F3
+				51 : midiAction("keypress", 115), // F4
+				44 : midiAction("keypress", 116), // F5
+				45 : midiAction("keypress", 117), // F6
+				46 : midiAction("keypress", 118), // F7
+				47 : midiAction("keypress", 119), // F8
+				40 : midiAction("keypress", 120), // F9
+				41 : midiAction("keypress", 121), // F10
+				42 : midiAction("keypress", 122), // F11
+				43 : midiAction("keypress", 123), // F12
+				64 : midiAction("keypress", 48), // 0
+				65 : midiAction("keypress", 49), // 1
+				66 : midiAction("keypress", 50), // 2
+				67 : midiAction("keypress", 51), // 3
+				60 : midiAction("keypress", 52), // 4
+				61 : midiAction("keypress", 53), // 5
+				62 : midiAction("keypress", 54), // 6
+				63 : midiAction("keypress", 55), // 7
+				56 : midiAction("keypress", 56), // 8
+				57 : midiAction("keypress", 57), // 9
+				80 : midiAction("keypress", 81), // Q
+				81 : midiAction("keypress", 87), // W
+				82 : midiAction("keypress", 69), // E
+				83 : midiAction("keypress", 82), // R
+				76 : midiAction("keypress", 84), // T
+				77 : midiAction("keypress", 89), // Y
+				78 : midiAction("keypress", 85), // U
+				79 : midiAction("keypress", 73), // I
+				72 : midiAction("keypress", 65), // A
+				73 : midiAction("keypress", 83), // S
+				74 : midiAction("keypress", 68), // D
+				75 : midiAction("keypress", 70), // F
+				68 : midiAction("keypress", 71), // G
+				69 : midiAction("keypress", 72), // H
+				70 : midiAction("keypress", 74), // J
+				71 : midiAction("keypress", 75), // K
+				96 : midiAction("keypress", 90), // Z
+				97 : midiAction("keypress", 67), // C
+				98 : midiAction("keypress", 86), // V
+				99 : midiAction("keypress", 66), // B
+				92 : midiAction("keypress", 78), // N
+				93 : midiAction("keypress", 77), // M
+				94 : midiAction("keypress", 76), // L
+				95 : midiAction("keypress", 79), // O
+				88 : midiAction("keypress", 80), // P
+				89 : midiAction("keypress", 189), // -
+				90 : midiAction("keypress", 38), // Up
+				91 : midiAction("keypress", 32), // Space
+				84 : midiAction("keypress", 37), // Left
+				85 : midiAction("keypress", 40), // Down
+				86 : midiAction("keypress", 39), // Right
+				87 : midiAction("keypress", 187), // =
+				72 : midiAction("keypress", 46) // Delete
+			}
+		}
+	};
+
+	var changed = false;
+
+	for (var i = 0; i < Input.midiEventQueue.length; i++) {
+		var event = Input.midiEventQueue[i];
+		var eventObj = Input.processMidiEvent(event);
+		if (eventObj.type == "off") {
+			Players.midi.keyStates = {};
+			Players.midi.pressStates = {};
+		}
+		if (eventObj.type == "note") {
+			var channel = eventObj.channel;
+			var channelDict = genericDict.channel[channel];
+			if (!!channelDict) {
+				var key = eventObj.key;
+				var value = eventObj.value;
+				var action = channelDict[key];
+				if (!!action) {
+					if (action.type == "keypress") {
+						Players.midi.keyStates[key] = value;
+						Players.midi.pressStates[key] = value;
+						changed = true;
+					}
+				}
+			}
+		}
 	}
+
+	Input.midiEventQueue = new Array();
+
+	return changed;
 }
 
 /* Save/load images */
