@@ -1151,7 +1151,7 @@ Gallery.displayGallery = function(force = false) {
 			var url = img.src;
             if (img.src.indexOf("image/gif") == -1) {
                 var data = ImgFuncs.fromImage(img);
-                url = ImgFuncs.toDataURL(ImgFuncs.scaleImageData(data, 4));
+                url = ImgFuncs.toDataURL(ImgFuncs.addTransparentPixel(ImgFuncs.scaleImageData(data, 4)));
             }
 			var imgTag = document.createElement("img")
 			imgTag.src = url;
@@ -3172,6 +3172,15 @@ ImgFuncs.scaleImageData = function(imgDat1, scale) {
     }
     ImgFuncs.addBufferToImageData(imgDat2);
     return imgDat2
+}
+
+ImgFuncs.addTransparentPixel = function(imageData) {
+    var dataCopy = new Uint8Array(imageData.data);
+	var copy = new ImageData(imageData.width, imageData.height);
+	copy.data.set(dataCopy);
+	ImgFuncs.addBufferToImageData(copy);
+	copy.data[3] = 250;
+	return copy;
 }
 
 ImgFuncs.loadImage = function(url, callBack) {
