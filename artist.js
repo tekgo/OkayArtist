@@ -211,6 +211,8 @@ Artsy.keyboard = null;
 
 Artsy.state = {
 	canvasNeedsUpdate: true,
+	width: Artsy.constants.defaultSize,
+	height: Artsy.constants.defaultSize,
 	imageData: new ImageData(Artsy.constants.defaultSize, Artsy.constants.defaultSize),
 	brushType: 0,
 	brushSize: 1,
@@ -253,7 +255,7 @@ Artsy.addToHistory = function(imageData) {
 
 // Setup.
 Artsy.start = function() {
-	Artsy.canvas = Artsy.createCanvas(Artsy.constants.defaultSize, Artsy.constants.defaultSize);
+	Artsy.canvas = Artsy.createCanvas(Artsy.state.width, Artsy.state.height);
 	var main = document.createElement("div");
 	document.body.appendChild(main);
 	main.id = "main"
@@ -317,11 +319,17 @@ Artsy.readfiles = function(files, similar) {
 		image.onload = function() {
 			var canvas = document.createElement('canvas');
 			var context = canvas.getContext('2d');
-			// Draw it onto a 128 x 128 canvas.
-			canvas.width = Artsy.constants.defaultSize;
-			canvas.height = Artsy.constants.defaultSize;
-			context.drawImage(image, 0,0, Artsy.constants.defaultSize, Artsy.constants.defaultSize);
-			var imgDat = context.getImageData(0, 0, Artsy.constants.defaultSize, Artsy.constants.defaultSize);
+			// Draw it onto a artsy size canvas
+			let cnvWidth = Artsy.state.width;
+			let cnvHeight = Artsy.state.height;
+			canvas.width = cnvWidth;
+			canvas.height = cnvHeight;
+			var width = Math.min(cnvWidth, image.width);
+			var height = Math.min(cnvHeight, image.height);
+			context.drawImage(image, (cnvWidth - width) / 2,
+				(cnvHeight - height) / 2,
+				width, height);
+			var imgDat = context.getImageData(0, 0, cnvWidth, cnvHeight);
 			ImgFuncs.addBufferToImageData(imgDat);
 			if (similar == true) {
 				Artsy.state.similar = imgDat;
