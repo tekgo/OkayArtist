@@ -41,7 +41,7 @@ function Emotion(keycode, joy, fear, disgust, anger, sadness) {
 	// disregarding parts of the state that move away from zero.
 	this.compare = function(otherEmotion) {
 		var weight = 0;
-		for (var i = 0; i < this.state.length; ++i) {
+		for (let i = 0; i < this.state.length; ++i) {
 			var x = this.state[i] + otherEmotion.state[i];
 			var diff = Math.abs(this.state[i]) - Math.abs(x);
 			if (diff > 0) {
@@ -52,13 +52,13 @@ function Emotion(keycode, joy, fear, disgust, anger, sadness) {
 	}
 
 	this.add = function(otherEmotion) {
-		for (var i = 0; i < this.state.length; ++i) {
+		for (let i = 0; i < this.state.length; ++i) {
 			this.state[i] += otherEmotion.state[i];
 		}
 	}
 
 	this.addm = function(otherEmotion, mul) {
-		for (var i = 0; i < this.state.length; ++i) {
+		for (let i = 0; i < this.state.length; ++i) {
 			this.state[i] += otherEmotion.state[i] * mul;
 		}
 	}
@@ -239,7 +239,7 @@ Artsy.maxHistory = 50;
 Artsy.addToHistory = function(imageData) {
 	if (Artsy.history.length >= Artsy.maxHistory) {
 		var newHistory = [];
-		for (var i = 1; i < Artsy.history.length; i += 2) {
+		for (let i = 1; i < Artsy.history.length; i += 2) {
 			newHistory.push(Artsy.history[i]);
 		}
 		Artsy.tickHistory *= 2;
@@ -348,7 +348,7 @@ Artsy.readfiles = function(files, similar) {
 
 Artsy.performActionsForState = function(state) {
 	var actions = Artsy.allActions;
-	for (var i = 0; i < actions.length; ++i) {
+	for (let i = 0; i < actions.length; ++i) {
 		var action = actions[i];
 		var keyCode = action["keycode"];
 		if (keyCode > 0) {
@@ -385,7 +385,7 @@ Artsy.update = function() {
 
 	var players = Players.all()
 
-	for (var i = 0; i < players.length; i++) {
+	for (let i = 0; i < players.length; i++) {
 		var player = players[i];
 		if (player.isActive) {
 			player.writeState(Artsy.state);
@@ -400,7 +400,7 @@ Artsy.update = function() {
 
 		// For each locked region reset the region to it's state before the update.
 		Artsy.state.lockedRegions = Artsy.state.newLockedRegions.concat(Artsy.state.lockedRegions);
-		for (var i = 0; i < Artsy.state.lockedRegions.length; ++i) {
+		for (let i = 0; i < Artsy.state.lockedRegions.length; ++i) {
 			var region = Artsy.state.lockedRegions[i];
 			if (region.lifetime <= 0) {
 				break;
@@ -409,10 +409,10 @@ Artsy.update = function() {
 			var size = region.size;
 			var sx = region.x * size;
 			var sy = region.y * size;
-			for (var x = 0; x < size; ++x) {
-				for (var y = 0; y < size; ++y) {
+			for (let x = 0; x < size; ++x) {
+				for (let y = 0; y < size; ++y) {
 					// This is slow, make a thing for it.
-					ImgFuncs.setColor32(Artsy.state.imageData, x + sx, y + sy, ImgFuncs.getColor32(copy, x + sx, y + sy));
+					ImgFuncs_setColor32(Artsy.state.imageData, x + sx, y + sy, ImgFuncs_getColor32(copy, x + sx, y + sy));
 				}
 			}
 
@@ -423,7 +423,7 @@ Artsy.update = function() {
 
 		// Draw the brush point.
 		if (Artsy.state.blip == true) {
-			for (var i = 0; i < players.length; i++) {
+			for (let i = 0; i < players.length; i++) {
 				var player = players[i];
 				if (player.isActive) {
 					ctx.beginPath();
@@ -437,7 +437,7 @@ Artsy.update = function() {
 		Artsy.canvasNeedsUpdate = false;
 
 		// Color new locked regions yellow.
-		for (var i = 0; i < Artsy.state.newLockedRegions.length; ++i) {
+		for (let i = 0; i < Artsy.state.newLockedRegions.length; ++i) {
 			var region = Artsy.state.newLockedRegions[i];
 			var size = region.size;
 			var x = region.x * size;
@@ -460,7 +460,7 @@ Artsy.update = function() {
 			var offset = (message.length - 1) * size / 2;
 			var maxWidth = 0
 			ctx.fillStyle = "rgba(0,0,0,0.75)";
-			for (var i = 0; i < message.length; ++i) {
+			for (let i = 0; i < message.length; ++i) {
 				maxWidth = Math.max(message[i].length, maxWidth);
 			}
 			maxWidth *= size * 0.5;
@@ -469,7 +469,7 @@ Artsy.update = function() {
 			ctx.baseline = "middle";
 			ctx.textAlign = "center";
 			ctx.fillStyle = "white";
-			for (var i = 0; i < message.length; ++i) {
+			for (let i = 0; i < message.length; ++i) {
 				ctx.fillText(message[i], Artsy.state.imageData.width / 2, Artsy.state.imageData.height / 2 - offset + (i * size));
 			}
 		}
@@ -488,7 +488,7 @@ Artsy.update = function() {
 		}
 		btx.fillStyle = "rgba(255,255,127,0.5)";
 
-		for (var i = 0; i < touchKeys.length; ++i) {
+		for (let i = 0; i < touchKeys.length; ++i) {
 			var touchKey = touchKeys[i]
 			if (Artsy.state.keyStates[touchKey.keyCode] || Artsy.state.pressStates[touchKey.keyCode]) {
 				btx.fillRect(Artsy.keyboard.width * touchKey.origin.x, Artsy.keyboard.height * touchKey.origin.y, Artsy.keyboard.width * touchKey.size.width, Artsy.keyboard.height * touchKey.size.height);
@@ -618,7 +618,7 @@ Input.touchMoveHandler = function(e) {
 	Input.touches = e.touches;
 	var keyboard = Artsy.keyboard;
 	var allPoints = [];
-	for (var i = 0; i < Input.touches.length; ++i) {
+	for (let i = 0; i < Input.touches.length; ++i) {
 		var x = Input.touches[i].clientX;
 		var y = Input.touches[i].clientY;
 		allPoints.push({ x: x, y: y });
@@ -643,16 +643,16 @@ Input.pointHandler = function(allPoints) {
 		var height = keyboard.offsetHeight;
 
 		var points = [];
-		for (var i = 0; i < allPoints.length; ++i) {
+		for (let i = 0; i < allPoints.length; ++i) {
 			var x = (allPoints[i].x - offset.x) / width;
 			var y = (allPoints[i].y - offset.y) / height;
 			points.push({ x: x, y: y });
 		}
 
-		for (var i = 0; i < touchKeys.length; ++i) {
+		for (let i = 0; i < touchKeys.length; ++i) {
 			var touchKey = touchKeys[i]
 			var wasTouched = false;
-			for (var k = 0; k < points.length; ++k) {
+			for (let k = 0; k < points.length; ++k) {
 				if ((touchKey.origin.x <= points[k].x) && (touchKey.origin.y <= points[k].y) && (touchKey.origin.x + touchKey.size.width >= points[k].x) && (touchKey.origin.y + touchKey.size.height >= points[k].y)) {
 					wasTouched = true;
 					break
@@ -740,7 +740,7 @@ Input.gamepadDisconnected = function(event) {
 		Input.gamepads.splice(idx, 1);
 	}
 
-	for (var i = 0; i < Players.gamepads.length; i++) {
+	for (let i = 0; i < Players.gamepads.length; i++) {
 		if (Players.gamepads[i].gamepad.index == event.gamepad.index) {
 			Players.gamepads[i].isActive = false;
 		}
@@ -757,7 +757,7 @@ Input.requestMIDIAccess = function() {
 	function startListening(midiAccess) {
 		/* reset midiInputs here */
 		Players.midi.isActive = false;
-		for (var entry of midiAccess.inputs) {
+		for (let entry of midiAccess.inputs) {
 			entry[1].onmidimessage = function(e) { Input.onMIDIMessage(e) };
 			Players.midi.isActive = true;
 		}
@@ -868,11 +868,11 @@ Input.updateGamepads = function() {
 		gamepads = navigator.getGamepads();
 	}
 
-	for (var i = 0; i < Players.gamepads.length; i++) {
+	for (let i = 0; i < Players.gamepads.length; i++) {
 		var gamepadPlayer = Players.gamepads[i];
 		var oldState = gamepadPlayer.gamepadState;
 
-		for (var j = 0; j < gamepads.length; j++) {
+		for (let j = 0; j < gamepads.length; j++) {
 			if (!!gamepads[j] && gamepads[j].index == gamepadPlayer.gamepad.index) {
 				gamepadPlayer.gamepad = gamepads[j];
 			}
@@ -1009,7 +1009,7 @@ Input.updateMIDI = function() {
 
 	var changed = false;
 
-	for (var i = 0; i < Input.midiEventQueue.length; i++) {
+	for (let i = 0; i < Input.midiEventQueue.length; i++) {
 		var event = Input.midiEventQueue[i];
 		var eventObj = Input.processMidiEvent(event);
 		if (eventObj.type == "off") {
@@ -1053,7 +1053,7 @@ Gallery.saveImageGroup = function(images) {
 	});
 	Gallery.giffer = gif;
 
-	for (var i = 0; i < images.length; i++) {
+	for (let i = 0; i < images.length; i++) {
 		gif.addFrame(images[i]);
 	}
 
@@ -1081,7 +1081,7 @@ Gallery.saveImageData = function(imageData) {
 // Stores images as data urls
 Gallery.saveImageURL = function(url) {
 	var images = Gallery.getSavedImages();
-	for (var i = 0; i < images.length; ++i) {
+	for (let i = 0; i < images.length; ++i) {
 		if (images[i] == url) {
 			return;
 		}
@@ -1146,7 +1146,7 @@ Gallery.displayGallery = function(force = false) {
 		native = true;
 	}
 	var imgTags = new Array();
-	for (var i = 0; i < images.length; ++i) {
+	for (let i = 0; i < images.length; ++i) {
 		var j = i;
 		ImgFuncs.loadImage(images[i], function(img) {
 			var url = img.src;
@@ -1177,7 +1177,7 @@ Gallery.displayGallery = function(force = false) {
 					newGallery.removeChild(newGallery.firstChild);
 				}
 				newGallery.appendChild(close);
-				for (var i = 0; i < imgTags.length; i++) {
+				for (let i = 0; i < imgTags.length; i++) {
 					newGallery.appendChild(imgTags[i]);
 				}
 			}
@@ -1204,7 +1204,7 @@ Artsy.actions.greyFill = {
 		var r = Math.floor(32 * Math.random()) * 8;
 		var g = Math.floor(32 * Math.random()) * 8;
 		var b = Math.floor(32 * Math.random()) * 8;
-		for (var i = 0; i < output.width * output.height; ++i) {
+		for (let i = 0; i < output.width * output.height; ++i) {
 			if (i % Math.floor(output.width * 8.0 * Math.random()) == 0) {
 				r = Math.floor(32 * Math.random()) * 8;
 				g = Math.floor(32 * Math.random()) * 8;
@@ -1227,38 +1227,38 @@ Artsy.actions.also_do_something_neat_idk = {
 	emotion: new Emotion(77, 1, 2, 3, 0, 0),
 	action: function(state) {
 		var output = state.imageData
-		for (var x = 0; x < output.width; ++x) {
-			for (var y = 0; y < output.height; ++y) {
+		for (let x = 0; x < output.width; ++x) {
+			for (let y = 0; y < output.height; ++y) {
 
-				for (var i = 0; i < 3; ++i) {
+				for (let i = 0; i < 3; ++i) {
 					var e = uint32(0);
 					var d = uint32(0);
 
 					if (x > 0) {
-						d = uint32(ImgFuncs.getColor32(output, x - 1, y) >> (i * 8)) & 0xff;
+						d = uint32(ImgFuncs_getColor32(output, x - 1, y) >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 					}
 					if (y > 0) {
-						d = uint32(ImgFuncs.getColor32(output, x, y - 1) >> (i * 8)) & 0xff;
+						d = uint32(ImgFuncs_getColor32(output, x, y - 1) >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 					}
 					if (x < output.width - 1) {
-						d = uint32(ImgFuncs.getColor32(output, x + 1, y) >> (i * 8)) & 0xff;
+						d = uint32(ImgFuncs_getColor32(output, x + 1, y) >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 					}
 					if (y < output.height - 1) {
-						d = uint32(ImgFuncs.getColor32(output, x, y + 1) >> (i * 8)) & 0xff;
+						d = uint32(ImgFuncs_getColor32(output, x, y + 1) >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 					}
 
-					var c1 = uint32(ImgFuncs.getColor32(state.imageData, x, y));
+					var c1 = uint32(ImgFuncs_getColor32(state.imageData, x, y));
 					var c2 = c1 | (uint32(e) << uint32(i * 8))
 					if (c2 > c1) {
 						++c1;
 					} else if (c2 < c1) {
 						--c1;
 					}
-					ImgFuncs.setColor32(state.imageData, x, y, c1);
+					ImgFuncs_setColor32(state.imageData, x, y, c1);
 				}
 			}
 		}
@@ -1276,34 +1276,34 @@ Artsy.actions.do_a_thing = {
 	action: function(state) {
 		var oxbox = [0xffffff00, 0xffff00ff, 0xff00ffff];
 		var output = state.imageData
-		for (var x = 0; x < output.width; ++x) {
-			for (var y = 0; y < output.height; ++y) {
-				for (var i = 0; i < 3; ++i) {
+		for (let x = 0; x < output.width; ++x) {
+			for (let y = 0; y < output.height; ++y) {
+				for (let i = 0; i < 3; ++i) {
 					var e = uint32(0);
 					var d = 0;
 					var n = 0;
 					if (x > 0) {
-						d = uint32(ImgFuncs.getColor32(output, x - 1, y) >> (i * 8)) & 0xff;
+						d = uint32(ImgFuncs_getColor32(output, x - 1, y) >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 						if (d > 0x7f) ++n;
 					}
 					if (y > 0) {
-						d = uint32(ImgFuncs.getColor32(output, x, y - 1) >> (i * 8)) & 0xff;
+						d = uint32(ImgFuncs_getColor32(output, x, y - 1) >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 						if (d > 0x7f) ++n;
 					}
 					if (x < output.width - 1) {
-						d = uint32(ImgFuncs.getColor32(output, x + 1, y) >> (i * 8)) & 0xff;
+						d = uint32(ImgFuncs_getColor32(output, x + 1, y) >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 						if (d > 0x7f) ++n;
 					}
 					if (y < output.height - 1) {
-						d = uint32(ImgFuncs.getColor32(output, x, y + 1) >> (i * 8)) & 0xff;
+						d = uint32(ImgFuncs_getColor32(output, x, y + 1) >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 						if (d > 0x7f) ++n;
 					}
 
-					var c1 = uint32(ImgFuncs.getColor32(state.imageData, x, y));
+					var c1 = uint32(ImgFuncs_getColor32(state.imageData, x, y));
 					var c2 = uint32((c1 >> uint32(i * 8))) & 0xff
 					if (n > 2 && c2 < 0xff) {
 						++c2;
@@ -1311,7 +1311,7 @@ Artsy.actions.do_a_thing = {
 						--c2;
 					}
 					c1 = uint32(uint32(c1 & uint32(oxbox[i])) | uint32(c2 << (i * 8)));
-					ImgFuncs.setColor32(state.imageData, x, y, c1);
+					ImgFuncs_setColor32(state.imageData, x, y, c1);
 				}
 			}
 		}
@@ -1328,8 +1328,8 @@ Artsy.actions.do_another_thing = {
 	emotion: new Emotion(84, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var output = state.imageData
-		for (var x = 0; x < output.width; ++x) {
-			for (var y = 0; y < output.height; ++y) {
+		for (let x = 0; x < output.width; ++x) {
+			for (let y = 0; y < output.height; ++y) {
 				var nx = x - 1;
 				var ny = y;
 				if (nx < 0) {
@@ -1339,15 +1339,15 @@ Artsy.actions.do_another_thing = {
 						ny = 0;
 				}
 
-				var c1 = ImgFuncs.getColorArr(output, x, y);
-				var c2 = ImgFuncs.getColorArr(output, nx, ny);
+				var c1 = ImgFuncs_getColorArr(output, x, y);
+				var c2 = ImgFuncs_getColorArr(output, nx, ny);
 				for (i = 0; i < 3; ++i) {
 					c1[i] = ((c1[i] % 64) + (61 * Math.floor(c1[i] / 64)) + (2 * Math.floor(c2[i] / 64)) + Math.floor(c2[(i + 1) % 3] / 64)) % 256;
 				}
 
-				var rgb1 = ImgFuncs.arrTo32(c1)
+				var rgb1 = ImgFuncs_arrTo32(c1)
 
-				ImgFuncs.setColor32(output, x, y, rgb1);
+				ImgFuncs_setColor32(output, x, y, rgb1);
 			}
 		}
 
@@ -1363,13 +1363,13 @@ Artsy.actions.do_a_weird_thing = {
 	emotion: new Emotion(73, -5, -5, 5, 5, 5),
 	action: function(state) {
 		var output = state.imageData
-		for (var x = 0; x < output.width; ++x) {
-			for (var y = 0; y < output.height; ++y) {
-				var c1 = ImgFuncs.getColorArr(output, x, y);
+		for (let x = 0; x < output.width; ++x) {
+			for (let y = 0; y < output.height; ++y) {
+				var c1 = ImgFuncs_getColorArr(output, x, y);
 				var hsv = ImgFuncs.RGBToHSV(c1);
 				hsv[0] += 1 / 360;
 				c1 = ImgFuncs.HSVToRGB(hsv);
-				ImgFuncs.setColorArr(output, x, y, c1);
+				ImgFuncs_setColorArr(output, x, y, c1);
 			}
 		}
 		state.imageData = output;
@@ -1387,15 +1387,15 @@ Artsy.actions.do_a_locational_thing = {
 		var x = state.brushPoint.x;
 		var total = new Array(0, 0, 0)
 
-		for (var y = 0; y < output.height; ++y) {
-			var c1 = ImgFuncs.getColorArr(output, x, y);
+		for (let y = 0; y < output.height; ++y) {
+			var c1 = ImgFuncs_getColorArr(output, x, y);
 			total[0] += ~~(c1[0] / output.width);
 			total[1] += ~~(c1[1] / output.width);
 			total[2] += ~~(c1[2] / output.width);
 		}
 
-		for (var y = 0; y < output.height; ++y) {
-			c2 = ImgFuncs.getColorArr(output, x, y);
+		for (let y = 0; y < output.height; ++y) {
+			c2 = ImgFuncs_getColorArr(output, x, y);
 
 			if (c2[0] > total[0]) --c2[0];
 			if (c2[0] < total[0]) ++c2[0];
@@ -1405,7 +1405,7 @@ Artsy.actions.do_a_locational_thing = {
 			if (c2[2] < total[2]) ++c2[2];
 
 
-			ImgFuncs.setColorArr(output, x, y, c2);
+			ImgFuncs_setColorArr(output, x, y, c2);
 		}
 		return state;
 	}
@@ -1418,10 +1418,10 @@ Artsy.actions.down_thing = {
 	emotion: new Emotion(70, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var output = state.imageData
-		for (var x = 0; x < output.width; ++x) {
-			for (var y = output.height - 1; y > 0; y--) {
-				var rgb1 = ImgFuncs.getColorArr(output, x, y);
-				var rgb2 = ImgFuncs.getColorArr(output, x, y - 1);
+		for (let x = 0; x < output.width; ++x) {
+			for (let y = output.height - 1; y > 0; y--) {
+				let rgb1 = ImgFuncs_getColorArr(output, x, y);
+				let rgb2 = ImgFuncs_getColorArr(output, x, y - 1);
 				if (rgb2[0] > rgb1[0]) {
 					var tmp = rgb1[0];
 					rgb1[0] = rgb2[0];
@@ -1437,8 +1437,8 @@ Artsy.actions.down_thing = {
 					rgb1[2] = rgb2[2];
 					rgb2[2] = tmp;
 				}
-				ImgFuncs.setColorArr(output, x, y, rgb1);
-				ImgFuncs.setColorArr(output, x, y - 1, rgb2);
+				ImgFuncs_setColorArr(output, x, y, rgb1);
+				ImgFuncs_setColorArr(output, x, y - 1, rgb2);
 			}
 		}
 		state.imageData = output;
@@ -1455,9 +1455,9 @@ Artsy.actions.bandit = {
 		var output = state.imageData
 		var width = output.width;
 		var height = output.height;
-		for (var x = 0; x < width; ++x) {
-			for (var y = 0; y < height; ++y) {
-				var rgb = ImgFuncs.getColorArr(output, x, y);
+		for (let x = 0; x < width; ++x) {
+			for (let y = 0; y < height; ++y) {
+				var rgb = ImgFuncs_getColorArr(output, x, y);
 				for (n = 0; n < 3; ++n) {
 					if (Math.floor(Math.floor((rgb[n]) / 64) * 64 + 16) < rgb[n]) {
 						--rgb[n];
@@ -1465,7 +1465,7 @@ Artsy.actions.bandit = {
 						++rgb[n];
 					}
 				}
-				ImgFuncs.setColorArr(output, x, y, rgb);
+				ImgFuncs_setColorArr(output, x, y, rgb);
 			}
 		}
 		state.imageData = output;
@@ -1480,21 +1480,21 @@ Artsy.actions.magic = {
 	emotion: new Emotion(76, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var output = state.imageData
-		for (var x = 0; x < output.width; ++x) {
-			for (var y = 0; y < output.height; ++y) {
-				var r1 = ImgFuncs.getColorC(output, x, y, 0);
+		for (let x = 0; x < output.width; ++x) {
+			for (let y = 0; y < output.height; ++y) {
+				var r1 = ImgFuncs_getColorC(output, x, y, 0);
 				if (r1 > 32) {
-					var r2 = ImgFuncs.getColorC(output, x - 1, y, 0);
+					var r2 = ImgFuncs_getColorC(output, x - 1, y, 0);
 					r2 = Math.floor((r1 + r2) / 2);
-					ImgFuncs.setColorC(output, x - 1, y, 0, r2);
+					ImgFuncs_setColorC(output, x - 1, y, 0, r2);
 
-					var r3 = ImgFuncs.getColorC(output, x + 1, y + 1, 0);
+					var r3 = ImgFuncs_getColorC(output, x + 1, y + 1, 0);
 					++r3;
-					ImgFuncs.setColorC(output, x + 1, y + 1, 0, r3);
+					ImgFuncs_setColorC(output, x + 1, y + 1, 0, r3);
 
-					var r4 = ImgFuncs.getColorC(output, x + 1, y - 1, 0);
+					var r4 = ImgFuncs_getColorC(output, x + 1, y - 1, 0);
 					++r4;
-					ImgFuncs.setColorC(output, x + 1, y - 1, 0, r4);
+					ImgFuncs_setColorC(output, x + 1, y - 1, 0, r4);
 				}
 			}
 		}
@@ -1557,7 +1557,7 @@ Artsy.actions.SDL_SCANCODE_R = {
 	emotion: new Emotion(82, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var output = state.imageData;
-		for (var y = 1; y < output.height; ++y) {
+		for (let y = 1; y < output.height; ++y) {
 			ImgFuncs.skewx(output, 0, y - 1, output.width, 1, y);
 		}
 
@@ -1591,28 +1591,28 @@ Artsy.actions.SDL_SCANCODE_U = {
 			var pt = idxf(1);
 			var x2 = pt.x;
 			var y2 = pt.y;
-			var c2 = ImgFuncs.getColor32(output, x2, y2);
+			var c2 = ImgFuncs_getColor32(output, x2, y2);
 			var x1 = x2;
 			var y1 = y2;
 			var pt2 = idxf(i + 1)
 			var c1 = c2;
-			for (var i = 1; i < max - 1; ++i) {
+			for (let i = 1; i < max - 1; ++i) {
 				x1 = x2;
 				y1 = y2;
 				pt2 = idxf(i + 1)
 				x2 = pt2.x;
 				y2 = pt2.y;
 				c1 = c2;
-				c2 = ImgFuncs.getColor32(output, x2, y2);
+				c2 = ImgFuncs_getColor32(output, x2, y2);
 				var colors = swapf(ImgFuncs.lesser(c1, c2), ImgFuncs.greater(c1, c2));
 				var less = colors.a;
 				var great = colors.b;
-				ImgFuncs.setColor32(output, x1, y1, less);
-				ImgFuncs.setColor32(output, x2, y2, great);
+				ImgFuncs_setColor32(output, x1, y1, less);
+				ImgFuncs_setColor32(output, x2, y2, great);
 				c2 = great;
 			}
 		}
-		for (var im = 1; im <= 4; ++im) {
+		for (let im = 1; im <= 4; ++im) {
 			pass(idx, ImgFuncs.swap);
 			pass(unidx, ImgFuncs.unswap);
 		}
@@ -1637,13 +1637,13 @@ Artsy.actions.SDL_SCANCODE_P = {
 			return { x: i % output.width, y: Math.floor(i / output.width) }
 		}
 
-		for (var i = 1; i < max - 2; i += 2) {
+		for (let i = 1; i < max - 2; i += 2) {
 			var p1 = idxf(i);
 			var p2 = idxf(i + 1);
-			var c1 = ImgFuncs.getColor32(output, p1.x, p1.y);
-			var c2 = ImgFuncs.getColor32(output, p2.x, p2.y);
-			ImgFuncs.setColor32(output, p1.x, p1.y, c2);
-			ImgFuncs.setColor32(output, p2.x, p2.y, c1);
+			var c1 = ImgFuncs_getColor32(output, p1.x, p1.y);
+			var c2 = ImgFuncs_getColor32(output, p2.x, p2.y);
+			ImgFuncs_setColor32(output, p1.x, p1.y, c2);
+			ImgFuncs_setColor32(output, p2.x, p2.y, c1);
 		}
 
 		state.imageData = output;
@@ -1746,26 +1746,26 @@ Artsy.actions.SDL_SCANCODE_B = {
 			var pt = idxf(1);
 			var x2 = pt.x;
 			var y2 = pt.y;
-			var c2 = ImgFuncs.getColor32(output, x2, y2);
+			var c2 = ImgFuncs_getColor32(output, x2, y2);
 			var x1 = x2;
 			var y1 = y2;
 			var c1 = c2;
-			for (var i = 1; i < max - 1; ++i) {
+			for (let i = 1; i < max - 1; ++i) {
 				var pt2 = idxf(i + 1)
 				x1 = x2;
 				y1 = y2;
 				c1 = c2;
 				x2 = pt2.x;
 				y2 = pt2.y;
-				c2 = ImgFuncs.getColor32(output, x2, y2);
+				c2 = ImgFuncs_getColor32(output, x2, y2);
 				if (cmpf(c1, c2) == true) {
-					ImgFuncs.setColor32(output, x1, y1, c2);
-					ImgFuncs.setColor32(output, x2, y2, c1);
+					ImgFuncs_setColor32(output, x1, y1, c2);
+					ImgFuncs_setColor32(output, x2, y2, c1);
 					c2 = c1;
 				}
 			}
 		}
-		for (var im = 1; im <= 4; ++im) {
+		for (let im = 1; im <= 4; ++im) {
 			pass(idx, cmp);
 			pass(unidx, uncmp);
 		}
@@ -1796,7 +1796,7 @@ Artsy.actions.circle_thing = {
 
 		var brushes = Artsy.findAllBrushes();
 
-		for (var i = 0; i < brushes.length; ++i) {
+		for (let i = 0; i < brushes.length; ++i) {
 			var brush = brushes[i];
 			if (brush.number == state.brushType) {
 				thisState = brush.action(thisState);
@@ -1882,13 +1882,13 @@ Artsy.actions.SDL_SCANCODE_J = {
 			assign.push(a);
 		}
 
-		for (var x = 0; x < state.imageData.width; ++x) {
-			for (var y = 0; y < state.imageData.height; ++y) {
-				var c1 = ImgFuncs.getColorArr(state.imageData, x, y);
-				for (var c = 0; c < 3; ++c) {
+		for (let x = 0; x < state.imageData.width; ++x) {
+			for (let y = 0; y < state.imageData.height; ++y) {
+				var c1 = ImgFuncs_getColorArr(state.imageData, x, y);
+				for (let c = 0; c < 3; ++c) {
 					color[c] = c1[assign[c]];
 				}
-				ImgFuncs.setColorArr(state.imageData, x, y, color);
+				ImgFuncs_setColorArr(state.imageData, x, y, color);
 			}
 		}
 
@@ -1942,10 +1942,10 @@ Artsy.actions.SDL_SCANCODE_DOWN = {
 			return ~~(i / 3) + (i % 3) * (~~(s / 3));
 		}
 		var copy = ImgFuncs.copyData(state.imageData);
-		for (var x = 0; x < state.imageData.width; ++x) {
-			for (var y = 0; y < state.imageData.width; ++y) {
-				var c = ImgFuncs.getColor32(copy, x, y);
-				ImgFuncs.setColor32(state.imageData, localFilter(x, state.imageData.width), localFilter(y, state.imageData.height), c)
+		for (let x = 0; x < state.imageData.width; ++x) {
+			for (let y = 0; y < state.imageData.width; ++y) {
+				var c = ImgFuncs_getColor32(copy, x, y);
+				ImgFuncs_setColor32(state.imageData, localFilter(x, state.imageData.width), localFilter(y, state.imageData.height), c)
 			}
 		}
 		Sounder.playSound("sfx_0");
@@ -1960,10 +1960,10 @@ Artsy.actions.SDL_SCANCODE_LEFT = {
 	emotion: new Emotion(37, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var copy = ImgFuncs.copyData(state.imageData);
-		for (var x = 0; x < state.imageData.width; ++x) {
-			for (var y = 0; y < state.imageData.width; ++y) {
-				var c = ImgFuncs.getColor32(copy, x, y);
-				ImgFuncs.setColor32(state.imageData, (x + (~~(state.imageData.width / 3)) - 1) % state.imageData.width, y, c)
+		for (let x = 0; x < state.imageData.width; ++x) {
+			for (let y = 0; y < state.imageData.width; ++y) {
+				var c = ImgFuncs_getColor32(copy, x, y);
+				ImgFuncs_setColor32(state.imageData, (x + (~~(state.imageData.width / 3)) - 1) % state.imageData.width, y, c)
 			}
 		}
 		Sounder.playSound("sfx_2");
@@ -1978,10 +1978,10 @@ Artsy.actions.SDL_SCANCODE_RIGHT = {
 	emotion: new Emotion(39, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var copy = ImgFuncs.copyData(state.imageData);
-		for (var x = 0; x < state.imageData.width; ++x) {
-			for (var y = 0; y < state.imageData.width; ++y) {
-				var c = ImgFuncs.getColor32(copy, x, y);
-				ImgFuncs.setColor32(state.imageData, x, (y + (~~(state.imageData.height / 3)) - 1) % state.imageData.height, c)
+		for (let x = 0; x < state.imageData.width; ++x) {
+			for (let y = 0; y < state.imageData.width; ++y) {
+				var c = ImgFuncs_getColor32(copy, x, y);
+				ImgFuncs_setColor32(state.imageData, x, (y + (~~(state.imageData.height / 3)) - 1) % state.imageData.height, c)
 			}
 		}
 		Sounder.playSound("sfx_2");
@@ -2326,55 +2326,55 @@ Artsy.brushes.smoosh = {
 	name: "Smoosh",
 	number: 1,
 	action: function(state) {
-		for (var i = 0; i < state.brushSize; ++i) { //which ring {
-			for (var j = 0; j <= i; ++j) { //within ring
+		for (let i = 0; i < state.brushSize; ++i) { //which ring {
+			for (let j = 0; j <= i; ++j) { //within ring
 				//do each of the four sides of the diamond
 				var c1 = 0;
 				var x = state.brushPoint.x - 1 - i + j;
 				var y = state.brushPoint.y + j;
-				// ImgFuncs.setColor32(state.imageData, x, y, c1);
-				// ImgFuncs.getColor32(state.imageData, x - 1, y);
+				// ImgFuncs_setColor32(state.imageData, x, y, c1);
+				// ImgFuncs_getColor32(state.imageData, x - 1, y);
 				if (j == 0) {
-					c1 = ImgFuncs.getColor32(state.imageData, x - 1, y);
+					c1 = ImgFuncs_getColor32(state.imageData, x - 1, y);
 				} else if (j == i) {
-					c1 = ImgFuncs.getColor32(state.imageData, x, y + 1);
+					c1 = ImgFuncs_getColor32(state.imageData, x, y + 1);
 				} else {
-					c1 = (ImgFuncs.getColor32(state.imageData, x - 1, y) + ImgFuncs.getColor32(state.imageData, x, y + 1)) / 2;
+					c1 = (ImgFuncs_getColor32(state.imageData, x - 1, y) + ImgFuncs_getColor32(state.imageData, x, y + 1)) / 2;
 				}
-				ImgFuncs.setColor32(state.imageData, x, y, c1);
+				ImgFuncs_setColor32(state.imageData, x, y, c1);
 
 				y = state.brushPoint.y + 1 + i - j;
 				x = state.brushPoint.x + j;
 				if (j == 0) {
-					c1 = ImgFuncs.getColor32(state.imageData, x + 1, y);
+					c1 = ImgFuncs_getColor32(state.imageData, x + 1, y);
 				} else if (j == i) {
-					c1 = ImgFuncs.getColor32(state.imageData, x, y + 1);
+					c1 = ImgFuncs_getColor32(state.imageData, x, y + 1);
 				} else {
-					c1 = (ImgFuncs.getColor32(state.imageData, x + 1, y) + ImgFuncs.getColor32(state.imageData, x, y + 1)) / 2;
+					c1 = (ImgFuncs_getColor32(state.imageData, x + 1, y) + ImgFuncs_getColor32(state.imageData, x, y + 1)) / 2;
 				}
-				ImgFuncs.setColor32(state.imageData, x, y, c1);
+				ImgFuncs_setColor32(state.imageData, x, y, c1);
 
 				x = state.brushPoint.x + 1 + i - j;
 				y = state.brushPoint.y - j;
 				if (j == 0) {
-					c1 = ImgFuncs.getColor32(state.imageData, x + 1, y);
+					c1 = ImgFuncs_getColor32(state.imageData, x + 1, y);
 				} else if (j == i) {
-					c1 = ImgFuncs.getColor32(state.imageData, x, y - 1);
+					c1 = ImgFuncs_getColor32(state.imageData, x, y - 1);
 				} else {
-					c1 = (ImgFuncs.getColor32(state.imageData, x + 1, y) + ImgFuncs.getColor32(state.imageData, x, y - 1)) / 2;
+					c1 = (ImgFuncs_getColor32(state.imageData, x + 1, y) + ImgFuncs_getColor32(state.imageData, x, y - 1)) / 2;
 				}
-				ImgFuncs.setColor32(state.imageData, x, y, c1);
+				ImgFuncs_setColor32(state.imageData, x, y, c1);
 
 				y = state.brushPoint.y - 1 - i + j;
 				x = state.brushPoint.x - j;
 				if (j == 0) {
-					c1 = ImgFuncs.getColor32(state.imageData, x - 1, y);
+					c1 = ImgFuncs_getColor32(state.imageData, x - 1, y);
 				} else if (j == i) {
-					c1 = ImgFuncs.getColor32(state.imageData, x, y - 1);
+					c1 = ImgFuncs_getColor32(state.imageData, x, y - 1);
 				} else {
-					c1 = (ImgFuncs.getColor32(state.imageData, x - 1, y) + ImgFuncs.getColor32(state.imageData, x, y - 1)) / 2;
+					c1 = (ImgFuncs_getColor32(state.imageData, x - 1, y) + ImgFuncs_getColor32(state.imageData, x, y - 1)) / 2;
 				}
-				ImgFuncs.setColor32(state.imageData, x, y, c1);
+				ImgFuncs_setColor32(state.imageData, x, y, c1);
 			}
 		}
 		return state;
@@ -2387,14 +2387,14 @@ Artsy.brushes.col = {
 	action: function(state) {
 		var x = state.brushPoint.x;
 		var y = state.brushPoint.y;
-		for (var j = -3; j <= +3; ++j) {
+		for (let j = -3; j <= +3; ++j) {
 			var s = 1 + state.brushSize / 2;
-			var c0 = ImgFuncs.getColor32(state.imageData, x + j, y - s);
-			for (var i = y - s; i < y + s; ++i) {
-				var c = ImgFuncs.getColor32(state.imageData, x + j, i + 1);
-				ImgFuncs.setColor32(state.imageData, x + j, i, c);
+			var c0 = ImgFuncs_getColor32(state.imageData, x + j, y - s);
+			for (let i = y - s; i < y + s; ++i) {
+				var c = ImgFuncs_getColor32(state.imageData, x + j, i + 1);
+				ImgFuncs_setColor32(state.imageData, x + j, i, c);
 			}
-			ImgFuncs.setColor32(state.imageData, x + j, i, c0);
+			ImgFuncs_setColor32(state.imageData, x + j, i, c0);
 		}
 		return state;
 	}
@@ -2406,21 +2406,21 @@ Artsy.brushes.lightning = {
 	action: function(state) {
 		var x = state.brushPoint.x;
 		var y = state.brushPoint.y;
-		var rgb = ImgFuncs.getColorArr(state.imageData, x, y);
-		for (var i = 0; i < 3; ++i) {
+		var rgb = ImgFuncs_getColorArr(state.imageData, x, y);
+		for (let i = 0; i < 3; ++i) {
 			if (rgb[i] < 0x5f) {
 				rgb[i] += 2;
 			}
 		}
-		ImgFuncs.setColorArr(state.imageData, x, y, rgb);
+		ImgFuncs_setColorArr(state.imageData, x, y, rgb);
 
 		var visited = {};
 
 
-		for (var i = 0; i < state.brushSize * 4; ++i) {
+		for (let i = 0; i < state.brushSize * 4; ++i) {
 			x = state.brushPoint.x;
 			y = state.brushPoint.y;
-			for (var j = 0; j < state.brushSize * 4 + 16; ++j) {
+			for (let j = 0; j < state.brushSize * 4 + 16; ++j) {
 				var nx = x;
 				var ny = y;
 				switch (Math.floor(Math.random() * 4) % 4) {
@@ -2443,9 +2443,9 @@ Artsy.brushes.lightning = {
 				}
 				visited[nx + ny * state.imageData.width] = true;
 
-				var rgb2 = ImgFuncs.getColorArr(state.imageData, nx, ny)
+				var rgb2 = ImgFuncs_getColorArr(state.imageData, nx, ny)
 				var d = 0;
-				for (var k = 0; k < 3; ++k) {
+				for (let k = 0; k < 3; ++k) {
 					d += Math.abs(rgb[k] - rgb2[k]);
 				}
 				if (d > 128 + rgb[0] / 2 + rgb[1] / 2 + rgb[2] / 2) {
@@ -2453,12 +2453,12 @@ Artsy.brushes.lightning = {
 				}
 				x = nx;
 				y = ny;
-				for (var k = 0; k < 3; ++k) {
+				for (let k = 0; k < 3; ++k) {
 					rgb2[k] = Math.floor((rgb[k] + rgb2[k]) / 2);
 				}
 
 				visited[x + y * state.imageData.width] = true;
-				ImgFuncs.setColorArr(state.imageData, x, y, rgb2);
+				ImgFuncs_setColorArr(state.imageData, x, y, rgb2);
 			}
 
 			switch (Math.floor(Math.random() * 4) % 4) {
@@ -2475,15 +2475,15 @@ Artsy.brushes.lightning = {
 					++y;
 					break;
 			}
-			var rgb2 = ImgFuncs.getColorArr(state.imageData, x, y);
+			var rgb2 = ImgFuncs_getColorArr(state.imageData, x, y);
 			var d = 0;
-			for (var k = 0; k < 3; ++k) {
+			for (let k = 0; k < 3; ++k) {
 				d += Math.abs(rgb2[k] - rgb[k]);
 			}
 			if (d > 4) {
-				ImgFuncs.setColorArr(state.imageData, x, y, new Array(Math.min(rgb2[0] + 1, 0xff), Math.min(rgb2[1] + 1, 0xff), Math.min(rgb2[2] + 1, 0xff)))
+				ImgFuncs_setColorArr(state.imageData, x, y, new Array(Math.min(rgb2[0] + 1, 0xff), Math.min(rgb2[1] + 1, 0xff), Math.min(rgb2[2] + 1, 0xff)))
 			} else {
-				ImgFuncs.setColorArr(state.imageData, x, y, rgb);
+				ImgFuncs_setColorArr(state.imageData, x, y, rgb);
 			}
 		}
 		return state;
@@ -2496,20 +2496,20 @@ Artsy.brushes.square_lightning = {
 	action: function(state) {
 		var x = state.brushPoint.x;
 		var y = state.brushPoint.y;
-		var rgb = ImgFuncs.getColorArr(state.imageData, x, y);
-		for (var i = 0; i < 3; ++i) {
+		var rgb = ImgFuncs_getColorArr(state.imageData, x, y);
+		for (let i = 0; i < 3; ++i) {
 			if (rgb[i] < 0x5f) {
 				rgb[i] += 2;
 			}
 		}
-		ImgFuncs.setColorArr(state.imageData, x, y, rgb);
+		ImgFuncs_setColorArr(state.imageData, x, y, rgb);
 
 		var visited = {};
 
-		for (var i = 0; i < state.brushSize; ++i) {
+		for (let i = 0; i < state.brushSize; ++i) {
 			x = state.brushPoint.x;
 			y = state.brushPoint.y;
-			for (var j = 0; j < state.brushSize * 4 + 16; ++j) {
+			for (let j = 0; j < state.brushSize * 4 + 16; ++j) {
 				var nx = x;
 				var ny = y;
 				switch (Math.floor(Math.random() * 4) % 4) {
@@ -2532,9 +2532,9 @@ Artsy.brushes.square_lightning = {
 				}
 				visited[nx + ny * state.imageData.width] = true;
 
-				var rgb2 = ImgFuncs.getColorArr(state.imageData, nx, ny)
+				var rgb2 = ImgFuncs_getColorArr(state.imageData, nx, ny)
 				var d = 0;
-				for (var k = 0; k < 3; ++k) {
+				for (let k = 0; k < 3; ++k) {
 					d += Math.abs(rgb[k] - rgb2[k]);
 				}
 				if (d > 128 + rgb[0] / 2 + rgb[1] / 2 + rgb[2] / 2) {
@@ -2562,13 +2562,13 @@ Artsy.brushes.square_lightning = {
 			var miy = Math.min(y, state.brushPoint.y);
 			var may = Math.max(y, state.brushPoint.y);
 
-			for (var x = mi; x < ma; ++x) {
-				for (var y = miy; y < may; ++y) {
-					var rgb3 = ImgFuncs.getColorArr(state.imageData, x, y);
-					for (var k = 0; k < 3; ++k) {
+			for (let x = mi; x < ma; ++x) {
+				for (let y = miy; y < may; ++y) {
+					var rgb3 = ImgFuncs_getColorArr(state.imageData, x, y);
+					for (let k = 0; k < 3; ++k) {
 						rgb3[k] = ~~((rgb[k] + rgb3[k]) / 2);
 					}
-					ImgFuncs.setColorArr(state.imageData, x, y, rgb3);
+					ImgFuncs_setColorArr(state.imageData, x, y, rgb3);
 				}
 			}
 
@@ -2589,9 +2589,9 @@ Artsy.brushes.dichotomy = {
 		var rgb3 = new Array(0, 0, 0);
 
 		var s = 1 + state.brushSize / 2;
-		for (var i = -s; i <= +s; ++i) {
-			for (var j = -s; j <= +s; ++j) {
-				var rgb1 = ImgFuncs.getColorArr(state.imageData, x + i, y + j);
+		for (let i = -s; i <= +s; ++i) {
+			for (let j = -s; j <= +s; ++j) {
+				var rgb1 = ImgFuncs_getColorArr(state.imageData, x + i, y + j);
 				if (rgb1[0] + rgb1[1] + rgb1[2] < rgb2[0] + rgb2[1] + rgb2[2]) {
 					rgb2[0] = rgb1[0];
 					rgb2[1] = rgb1[1];
@@ -2604,17 +2604,17 @@ Artsy.brushes.dichotomy = {
 				}
 			}
 		}
-		for (var i = -s; i <= +s; ++i) {
-			for (var j = -s; j <= +s; ++j) {
-				var rgb1 = ImgFuncs.getColorArr(state.imageData, x + i, y + j);
-				for (var k = 0; k < 3; ++k) {
+		for (let i = -s; i <= +s; ++i) {
+			for (let j = -s; j <= +s; ++j) {
+				var rgb1 = ImgFuncs_getColorArr(state.imageData, x + i, y + j);
+				for (let k = 0; k < 3; ++k) {
 					if ((rgb1[0] + rgb1[1] + rgb1[2]) - (rgb2[0] + rgb2[1] + rgb2[2]) < (rgb3[0] + rgb3[1] + rgb3[2]) - (rgb1[0] + rgb1[1] + rgb1[2])) {
 						if (rgb1[k] > rgb2[k]) {--rgb1[k]; }
 					} else {
 						if (rgb1[k] < rgb3[k]) {++rgb1[k]; }
 					}
 				}
-				ImgFuncs.setColorArr(state.imageData, x + i, y + j, rgb1);
+				ImgFuncs_setColorArr(state.imageData, x + i, y + j, rgb1);
 			}
 		}
 		return state;
@@ -2627,20 +2627,20 @@ Artsy.brushes.weird_lightning = {
 	action: function(state) {
 		var x = state.brushPoint.x;
 		var y = state.brushPoint.y;
-		var rgb = ImgFuncs.getColorArr(state.imageData, x, y);
-		for (var i = 0; i < 3; ++i) {
+		var rgb = ImgFuncs_getColorArr(state.imageData, x, y);
+		for (let i = 0; i < 3; ++i) {
 			if (rgb[i] < 0x5f) {
 				rgb[i] += 2;
 			}
 		}
-		ImgFuncs.setColorArr(state.imageData, x, y, rgb);
+		ImgFuncs_setColorArr(state.imageData, x, y, rgb);
 
 		var visited = {};
 
-		for (var i = 0; i < state.brushSize; ++i) {
+		for (let i = 0; i < state.brushSize; ++i) {
 			x = state.brushPoint.x;
 			y = state.brushPoint.y;
-			for (var j = 0; j < state.brushSize; ++j) {
+			for (let j = 0; j < state.brushSize; ++j) {
 				var nx = x;
 				var ny = y;
 				switch (Math.floor(Math.random() * 4) % 4) {
@@ -2663,9 +2663,9 @@ Artsy.brushes.weird_lightning = {
 				}
 				visited[nx + ny * state.imageData.width] = true;
 
-				var rgb2 = ImgFuncs.getColorArr(state.imageData, nx, ny)
+				var rgb2 = ImgFuncs_getColorArr(state.imageData, nx, ny)
 				var d = 0;
-				for (var k = 0; k < 3; ++k) {
+				for (let k = 0; k < 3; ++k) {
 					d += Math.abs(rgb2[k] - rgb[k]);
 				}
 				if (d < 32) {
@@ -2673,12 +2673,12 @@ Artsy.brushes.weird_lightning = {
 				}
 				x = nx;
 				y = ny;
-				for (var k = 0; k < 3; ++k) {
+				for (let k = 0; k < 3; ++k) {
 					rgb2[k] += ~~((rgb2[k] - rgb[k]) / 8)
 				}
 
 				visited[x + y * state.imageData.width] = true;
-				ImgFuncs.setColorArr(state.imageData, x, y, rgb2);
+				ImgFuncs_setColorArr(state.imageData, x, y, rgb2);
 			}
 
 			switch (Math.floor(Math.random() * 4) % 4) {
@@ -2695,11 +2695,11 @@ Artsy.brushes.weird_lightning = {
 					++y;
 					break;
 			}
-			var rgb2 = ImgFuncs.getColorArr(state.imageData, x, y);
-			for (var k = 0; k < 3; ++k) {
+			var rgb2 = ImgFuncs_getColorArr(state.imageData, x, y);
+			for (let k = 0; k < 3; ++k) {
 				rgb2[k] = rgb[k] - rgb2[k];
 			}
-			ImgFuncs.setColorArr(state.imageData, x, y, rgb2);
+			ImgFuncs_setColorArr(state.imageData, x, y, rgb2);
 		}
 		return state;
 	}
@@ -2712,20 +2712,20 @@ Artsy.brushes.control = {
 		var x = state.brushPoint.x;
 		var y = state.brushPoint.y;
 		var s = 1 + state.brushSize / 2;
-		for (var i = -s; i <= +s; ++i) {
-			for (var j = -s; j <= +s; ++j) {
+		for (let i = -s; i <= +s; ++i) {
+			for (let j = -s; j <= +s; ++j) {
 				if (!(i == s || i == -s || j == s || j == -s)) {
 					continue;
 				}
-				var rgb1 = ImgFuncs.getColorArr(state.imageData, x + i, y + j);
-				var rgb2 = ImgFuncs.getColorArr(state.imageData, x + i + 1, y + j);
-				var rgb3 = ImgFuncs.getColorArr(state.imageData, x + i - 1, y + j);
-				var rgb4 = ImgFuncs.getColorArr(state.imageData, x + i, y + j + 1);
-				var rgb5 = ImgFuncs.getColorArr(state.imageData, x + i, y + j + 1);
-				for (var k = 0; k < 3; ++k) {
+				var rgb1 = ImgFuncs_getColorArr(state.imageData, x + i, y + j);
+				var rgb2 = ImgFuncs_getColorArr(state.imageData, x + i + 1, y + j);
+				var rgb3 = ImgFuncs_getColorArr(state.imageData, x + i - 1, y + j);
+				var rgb4 = ImgFuncs_getColorArr(state.imageData, x + i, y + j + 1);
+				var rgb5 = ImgFuncs_getColorArr(state.imageData, x + i, y + j + 1);
+				for (let k = 0; k < 3; ++k) {
 					rgb1[k] = rgb2[k] ^ rgb3[k] ^ rgb4[k] ^ rgb5[k]
 				}
-				ImgFuncs.setColorArr(state.imageData, x + i, y + j, rgb1);
+				ImgFuncs_setColorArr(state.imageData, x + i, y + j, rgb1);
 			}
 		}
 		return state;
@@ -2742,8 +2742,8 @@ Artsy.brushes.untitled = {
 		var j = x;
 		var k = y;
 		var j_s = 1;
-		var c1 = ImgFuncs.getColor32(state.imageData, j, k);
-		for (var i = 0; i <= (s + 1) * (s + 1); ++i) {
+		var c1 = ImgFuncs_getColor32(state.imageData, j, k);
+		for (let i = 0; i <= (s + 1) * (s + 1); ++i) {
 			j += j_s;
 			if (j >= x + s / 2 || j < x - s / 2) {
 				j_s *= -1;
@@ -2752,8 +2752,8 @@ Artsy.brushes.untitled = {
 					k = y - s / 2;
 				}
 			}
-			var c2 = ImgFuncs.getColor32(state.imageData, j, k);
-			ImgFuncs.setColor32(state.imageData, j, k, c1);
+			var c2 = ImgFuncs_getColor32(state.imageData, j, k);
+			ImgFuncs_setColor32(state.imageData, j, k, c1);
 			c1 = c2;
 		}
 		return state;
@@ -2766,20 +2766,20 @@ Artsy.brushes.dark_lightning = {
 	action: function(state) {
 		var x = state.brushPoint.x;
 		var y = state.brushPoint.y;
-		var rgb = ImgFuncs.getColorArr(state.imageData, x, y);
-		for (var i = 0; i < 3; ++i) {
+		var rgb = ImgFuncs_getColorArr(state.imageData, x, y);
+		for (let i = 0; i < 3; ++i) {
 			if (rgb[i] > 0) {
 				rgb[i]--;
 			}
 		}
-		ImgFuncs.setColorArr(state.imageData, x, y, rgb);
+		ImgFuncs_setColorArr(state.imageData, x, y, rgb);
 
 		var visited = {};
 
-		for (var i = 0; i < state.brushSize * 2; ++i) {
+		for (let i = 0; i < state.brushSize * 2; ++i) {
 			x = state.brushPoint.x;
 			y = state.brushPoint.y;
-			for (var j = 0; j < state.brushSize * 4 + 16; ++j) {
+			for (let j = 0; j < state.brushSize * 4 + 16; ++j) {
 				var nx = x;
 				var ny = y;
 				switch (Math.floor(Math.random() * 4) % 4) {
@@ -2802,9 +2802,9 @@ Artsy.brushes.dark_lightning = {
 				}
 				visited[nx + ny * state.imageData.width] = true;
 
-				var rgb2 = ImgFuncs.getColorArr(state.imageData, nx, ny)
+				var rgb2 = ImgFuncs_getColorArr(state.imageData, nx, ny)
 				var d = 0;
-				for (var k = 0; k < 3; ++k) {
+				for (let k = 0; k < 3; ++k) {
 					d += Math.abs(rgb2[k] - rgb[k]);
 				}
 				if (d > 128 + rgb[0] / 2 + rgb[1] / 2 + rgb[2] / 2) {
@@ -2828,21 +2828,21 @@ Artsy.brushes.dark_lightning = {
 					++y;
 					break;
 			}
-			var rgb2 = ImgFuncs.getColorArr(state.imageData, x, y);
+			var rgb2 = ImgFuncs_getColorArr(state.imageData, x, y);
 			var d = 0;
-			for (var k = 0; k < 3; ++k) {
+			for (let k = 0; k < 3; ++k) {
 				d += Math.abs(rgb2[k] - rgb[k]);
 			}
 			if (d < 4) {
-				for (var k = 0; k < 3; ++k) {
+				for (let k = 0; k < 3; ++k) {
 					if (rgb2[k] > 0) {
 						rgb2[k]--;
 					}
 				}
-				ImgFuncs.setColorArr(state.imageData, x, y, rgb2)
+				ImgFuncs_setColorArr(state.imageData, x, y, rgb2)
 			} else {
 				var rgb3 = new Array((rgb2[0] + rgb[0]) / 2, (rgb2[1] + rgb[1]) / 2, (rgb2[2] + rgb[2]) / 2)
-				ImgFuncs.setColorArr(state.imageData, x, y, rgb3);
+				ImgFuncs_setColorArr(state.imageData, x, y, rgb3);
 			}
 		}
 		return state;
@@ -2891,46 +2891,44 @@ if (ImgFuncs.littleEndian == true) {
 	}
 }
 
-var fixEndian = ImgFuncs.fixEndian;
-
 // Gets a u32 for an idx value.
 ImgFuncs.getColor32Idx = function(imageData, idx) {
-	return fixEndian(imageData.u32[idx])
+	return ImgFuncs_fixEndian(imageData.u32[idx])
 }
 
 // Sets a u32 for an idx value.
 ImgFuncs.setColor32Idx = function(imageData, idx, color) {
-	imageData.u32[idx] = fixEndian(((color & 0xffffff00) | 0xff));
+	imageData.u32[idx] = ImgFuncs_fixEndian(((color & 0xffffff00) | 0xff));
 }
 
 // Gets a u32 for an x,y coord.
 ImgFuncs.getColor32 = function(imageData, x, y) {
 	if (imageData.x128) {
-		return fixEndian(imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))]);
+		return ImgFuncs_fixEndian(imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))]);
 	}
 	if (imageData.x512) {
-		return fixEndian(imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))]);
+		return ImgFuncs_fixEndian(imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))]);
 	}
-	var width = imageData.width;
-	var height = imageData.height;
-	var byteOffset = ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
-	return fixEndian(imageData.u32[byteOffset]);
+	const width = imageData.width;
+	const height = imageData.height;
+	const byteOffset = ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
+	return ImgFuncs_fixEndian(imageData.u32[byteOffset]);
 }
 
 // Sets a u32 for an x,y coord.
 ImgFuncs.setColor32 = function(imageData, x, y, color) {
 	if (imageData.x128) {
-		imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))] = fixEndian(((color & 0xffffff00) | 0xff));
+		imageData.u32[((~~(x + 128) & 127) + (128 * (~~(y + 128) & 127)))] = ImgFuncs_fixEndian(((color & 0xffffff00) | 0xff));
 		return
 	}
 	if (imageData.x512) {
-		imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))] = fixEndian(((color & 0xffffff00) | 0xff));
+		imageData.u32[((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511)))] = ImgFuncs_fixEndian(((color & 0xffffff00) | 0xff));
 		return
 	}
-	var width = imageData.width;
-	var height = imageData.height;
-	var byteOffset = ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
-	imageData.u32[byteOffset] = fixEndian(((color & 0xffffff00) | 0xff));
+	const width = imageData.width;
+	const height = imageData.height;
+	const byteOffset = ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
+	imageData.u32[byteOffset] = ImgFuncs_fixEndian(((color & 0xffffff00) | 0xff));
 }
 
 ImgFuncs.addBufferToImageData = function(imageData) {
@@ -2955,18 +2953,18 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 
 // Gets a 3 item array for an x,y coord.
 ImgFuncs.getColorArr = function(imageData, x, y) {
-	var color = ImgFuncs.getColor32(imageData, x, y);
+	const color = ImgFuncs_getColor32(imageData, x, y);
 	// return new Uint8Array([(color >> 24) & 0xff, (color >> (16)) & 0xff, (color >> (8)) & 0xff]);
 	return [(color >> 24) & 0xff, (color >> 16) & 0xff, (color >> 8) & 0xff];
 }
 
 // Gets a 3 item array for an x,y coord.
 ImgFuncs.setColorArr = function(imageData, x, y, color) {
-	var newColor = (((color[0] & 0xff) << 24) |
+	const newColor = (((color[0] & 0xff) << 24) |
 		((color[1] & 0xff) << 16) |
 		((color[2] & 0xff) << 8) |
 		(0xff));
-	ImgFuncs.setColor32(imageData, x, y, newColor);
+	ImgFuncs_setColor32(imageData, x, y, newColor);
 }
 
 // Gets a channel value for an x,y coord.
@@ -2977,9 +2975,9 @@ ImgFuncs.getColorC = function(imageData, x, y, c) {
 	if (imageData.x512) {
 		return imageData.u8[(((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511))) * 4) + c];
 	}
-	var width = imageData.width;
-	var height = imageData.height;
-	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
+	const width = imageData.width;
+	const height = imageData.height;
+	const byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
 	return imageData.u8[byteOffset + c];
 }
 
@@ -2993,15 +2991,15 @@ ImgFuncs.setColorC = function(imageData, x, y, c, color) {
 		imageData.u8[(((~~(x + 512) & 511) + (512 * (~~(y + 512) & 511))) * 4) + c] = ((~~color % 256) + 256) % 256;
 		return
 	}
-	var width = imageData.width;
-	var height = imageData.height;
-	var byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
+	const width = imageData.width;
+	const height = imageData.height;
+	const byteOffset = ((~~(x + width) % width) + (width * (~~(y + height) % height))) * 4;
 	imageData.u8[byteOffset + c] = ((~~color % 256) + 256) % 256;
 }
 
 // Converts a 3 item array to a uint32.
 ImgFuncs.arrTo32 = function(arr) {
-	var arr2 = [(~~arr[0]) & 255, (~~arr[1]) & 255, (~~arr[2]) & 255, 255];
+	const arr2 = [(~~arr[0]) & 255, (~~arr[1]) & 255, (~~arr[2]) & 255, 255];
 	// arr2.push(255)
 	// arr2[0] = (~~arr2[0]) & 255;
 	// arr2[1] = (~~arr2[1]) & 255;
@@ -3020,11 +3018,11 @@ ImgFuncs.arrTo32 = function(arr) {
 
 // Converts an rgb array to hsv.
 ImgFuncs.RGBToHSV = function(arr) {
-	var r = arr[0]
-	var g = arr[1];
-	var b = arr[2];
+	const r = arr[0]
+	const g = arr[1];
+	const b = arr[2];
 
-	var max = Math.max(r, g, b),
+	let max = Math.max(r, g, b),
 		min = Math.min(r, g, b),
 		d = max - min,
 		h,
@@ -3054,10 +3052,10 @@ ImgFuncs.RGBToHSV = function(arr) {
 
 // Converts an hsv array to rgb.
 ImgFuncs.HSVToRGB = function(arr) {
-	var h = arr[0];
-	var s = arr[1];
-	var v = arr[2];
-	var r, g, b, i, f, p, q, t;
+	const h = arr[0];
+	const s = arr[1];
+	const v = arr[2];
+	let r, g, b, i, f, p, q, t;
 	i = ~~(h * 6);
 	f = h * 6 - i;
 	p = v * (1 - s);
@@ -3088,84 +3086,89 @@ ImgFuncs.HSVToRGB = function(arr) {
 
 // Finds edges in a channel and colors them.
 ImgFuncs.findEdges = function(surface, channel, level, colorArr) {
-	for (var x = 0; x < surface.width; ++x) {
-		for (var y = 0; y < surface.height; ++y) {
+	for (let x = 0; x < surface.width; ++x) {
+		for (let y = 0; y < surface.height; ++y) {
 			var n = 0;
-			var rgb1 = ImgFuncs.getColorArr(surface, x, y);
+			var rgb1 = ImgFuncs_getColorArr(surface, x, y);
 			if (x > 0) {
-				var rgb2 = ImgFuncs.getColorArr(surface, x - 1, y);
+				var rgb2 = ImgFuncs_getColorArr(surface, x - 1, y);
 				if (rgb1[channel] >= level && rgb2[channel] < level) ++n;
 			}
 			if (y > 0) {
-				var rgb2 = ImgFuncs.getColorArr(surface, x, y - 1);
+				var rgb2 = ImgFuncs_getColorArr(surface, x, y - 1);
 				if (rgb1[channel] >= level && rgb2[channel] < level) ++n;
 			}
 			if (x < surface.width - 1) {
-				var rgb2 = ImgFuncs.getColorArr(surface, x + 1, y);
+				var rgb2 = ImgFuncs_getColorArr(surface, x + 1, y);
 				if (rgb1[channel] >= level && rgb2[channel] < level) ++n;
 			}
 			if (y < surface.height - 1) {
-				var rgb2 = ImgFuncs.getColorArr(surface, x, y + 1);
+				var rgb2 = ImgFuncs_getColorArr(surface, x, y + 1);
 				if (rgb1[channel] >= level && rgb2[channel] < level) ++n;
 			}
-			if (n > 0) ImgFuncs.setColorArr(surface, x, y, colorArr);
+			if (n > 0) ImgFuncs_setColorArr(surface, x, y, colorArr);
 		}
 	}
 	return surface
 }
 
 ImgFuncs.skewx = function(surface, fx, fy, fw, fh, by) {
-	var get32 = ImgFuncs.getColor32;
-	var set32 = ImgFuncs.setColor32;
-	for (var y = 0; y < fh; ++y) {
-		var ny = underflowMod(fy + y, surface.height);
-		var line = new Array();
-		for (var x = 0; x < fw; ++x) {
-			line.push(get32(surface, underflowMod(fx + x, surface.width), ny));
+	const get32 = ImgFuncs.getColor32;
+	const set32 = ImgFuncs.setColor32;
+	const height = surface.height;
+	const width = surface.width;
+	for (let y = 0; y < fh; ++y) {
+		let ny = underflowMod(fy + y, height);
+		let line = new Array();
+		for (let x = 0; x < fw; ++x) {
+			line.push(get32(surface, underflowMod(fx + x, width), ny));
 		}
-		for (var x = 0; x < fw; ++x) {
-			var c1 = line[x];
-			var off = (x + by) % fw;
+		for (let x = 0; x < fw; ++x) {
+			let c1 = line[x];
+			let off = (x + by) % fw;
 			if (off < 0) {
 				off = off + fw;
 			}
-			set32(surface, underflowMod(off, surface.width), ny, c1);
+			set32(surface, underflowMod(off, width), ny, c1);
 		}
 	}
 }
 
 ImgFuncs.skewy = function(surface, fx, fy, fw, fh, by) {
-	var get32 = ImgFuncs.getColor32;
-	var set32 = ImgFuncs.setColor32;
-	for (var x = 0; x < fw; ++x) {
-		var nx = underflowMod(fx + x, surface.width);
-		var line = new Array();
-		for (var y = 0; y < fh; ++y) {
-			line.push(get32(surface, nx, underflowMod(fy + y, surface.height)));
+	const get32 = ImgFuncs.getColor32;
+	const set32 = ImgFuncs.setColor32;
+	const height = surface.height;
+	const width = surface.width;
+	for (let x = 0; x < fw; ++x) {
+		let nx = underflowMod(fx + x, width);
+		let line = new Array();
+		for (let y = 0; y < fh; ++y) {
+			line.push(get32(surface, nx, underflowMod(fy + y, height)));
 		}
-		for (var y = 0; y < fh; ++y) {
-			var c1 = line[y];
-			var off = (y + by) % fh;
+		for (let y = 0; y < fh; ++y) {
+			let c1 = line[y];
+			let off = (y + by) % fh;
 			if (off < 0) {
 				off = off + fh;
 			}
-			set32(surface, nx, underflowMod(off, surface.height), c1);
+			set32(surface, nx, underflowMod(off, height), c1);
 		}
 	}
 }
 
 ImgFuncs.skewx_channel = function(surface, fx, fy, fw, fh, by, channel) {
-	var get32c = ImgFuncs.getColorC;
-	var set32c = ImgFuncs.setColorC;
-	for (var y = 0; y < fh; ++y) {
-		var ny = underflowMod(fy + y, surface.height);
-		var line = [];
-		for (var x = 0; x < fw; ++x) {
+	const get32c = ImgFuncs.getColorC;
+	const set32c = ImgFuncs.setColorC;
+	const height = surface.height;
+	for (let y = 0; y < fh; ++y) {
+		let ny = underflowMod(fy + y, height);
+		let line = [];
+		for (let x = 0; x < fw; ++x) {
 			line.push(get32c(surface, fx + x, ny, channel));
 		}
-		for (var x = 0; x < fw; ++x) {
-			var channelValue = line[x];
-			var off = (x + by) % fw;
+		for (let x = 0; x < fw; ++x) {
+			let channelValue = line[x];
+			let off = (x + by) % fw;
 			if (off < 0) {
 				off = off + fw;
 			}
@@ -3219,11 +3222,11 @@ ImgFuncs.scaleImageData = function(imgDat1, scale) {
 	var pix2 = new Uint32Array(imgDat2.data.buffer);
 	var canvasWidth1 = imgDat1.width;
 	var canvasWidth2 = imgDat2.width;
-	for (var x = 0; x < imgDat1.width; ++x) {
-		for (var y = 0; y < imgDat1.height; ++y) {
+	for (let x = 0; x < imgDat1.width; ++x) {
+		for (let y = 0; y < imgDat1.height; ++y) {
 			var idx = y * imgDat1.width + x;
-			for (var i = 0; i < scale; ++i) {
-				for (var j = 0; j < scale; ++j) {
+			for (let i = 0; i < scale; ++i) {
+				for (let j = 0; j < scale; ++j) {
 					pix2[(((y * scale) + j) * imgDat2.width) + (x * scale) + i] = pix1[idx];
 				}
 			}
@@ -3268,7 +3271,7 @@ ImgFuncs.fromDataURL = function(dataURL) {
 }
 
 ImgFuncs.flipline = function(surface, x, y) {
-	var c = ImgFuncs.getColor32(surface, x, y);
+	var c = ImgFuncs_getColor32(surface, x, y);
 	var d = Math.sqrt((x - y) * (x - y) * 2);
 	var x1 = y - x;
 	var y1 = x - y;
@@ -3278,8 +3281,8 @@ ImgFuncs.flipline = function(surface, x, y) {
 	}
 	x1 /= l;
 	y1 /= l;
-	for (var f = 0; f < d; f += 1.0, x += x1, y += y1) {
-		ImgFuncs.setColor32(surface, ~~(x), ~~(y), c);
+	for (let f = 0; f < d; f += 1.0, x += x1, y += y1) {
+		ImgFuncs_setColor32(surface, ~~(x), ~~(y), c);
 	}
 }
 
@@ -3298,7 +3301,7 @@ ImgFuncs.InPlacePyramid = function(to, from, filter) {
 
 	function cget(fx, fy, channel) {
 		var point = filter(size, fx, fy);
-		return ImgFuncs.getColorArr(from, point.x, point.y)[channel];
+		return ImgFuncs_getColorArr(from, point.x, point.y)[channel];
 	}
 
 	function cset(fx, fy, nx, ny, channel, color) {
@@ -3306,17 +3309,17 @@ ImgFuncs.InPlacePyramid = function(to, from, filter) {
 		var dy = fy * 3 + ny;
 		dx = Math.max(Math.min(size, dx), 0);
 		dy = Math.max(Math.min(size, dy), 0);
-		var ch = ImgFuncs.getColorArr(to, dx, dy)
+		var ch = ImgFuncs_getColorArr(to, dx, dy)
 		ch[channel] = ~~color;
-		ImgFuncs.setColorArr(to, dx, dy, ch);
+		ImgFuncs_setColorArr(to, dx, dy, ch);
 	}
 	var count = 0;
 
 	var coord = new Array({ x: 2, y: 2 }, { x: 1, y: 2 }, { x: 3, y: 2 }, { x: 2, y: 1 }, { x: 2, y: 3 }, { x: 1, y: 1 }, { x: 1, y: 3 }, { x: 3, y: 1 }, { x: 3, y: 3 });
 	var max = Math.ceil(size / 3) + 1;
-	for (var x = 0; x < max; ++x) {
-		for (var y = 0; y < max; ++y) {
-			for (var c = 0; c < 3; ++c) {
+	for (let x = 0; x < max; ++x) {
+		for (let y = 0; y < max; ++y) {
+			for (let c = 0; c < 3; ++c) {
 				var get = cget(x, y, c);
 				var left = cget(x - 1, y, c);
 				var right = cget(x + 1, y, c);
@@ -3329,7 +3332,7 @@ ImgFuncs.InPlacePyramid = function(to, from, filter) {
 				var newright = (right + get) / 2;
 
 				var tab = new Array(get, newleft, newright, newup, newdown, (newup + newleft) / 2, (newdown + newleft) / 2, (newup + newright) / 2, (newdown + newright) / 2);
-				for (var i = 0; i < tab.length; ++i) {
+				for (let i = 0; i < tab.length; ++i) {
 					var tc = coord[i];
 					cset(x, y, tc.x, tc.y, c, tab[i]);
 				}
@@ -3374,12 +3377,12 @@ ImgFuncs.textify = function(imageData) {
 
 	var any = 0;
 	var fontSize = 8;
-	for (var x = 0; x < imageData.width; ++x) {
-		for (var y = 0; y < imageData.height; ++y) {
-			var rgb = ImgFuncs.getColorArr(imageData, x, y);
+	for (let x = 0; x < imageData.width; ++x) {
+		for (let y = 0; y < imageData.height; ++y) {
+			var rgb = ImgFuncs_getColorArr(imageData, x, y);
 			if (rgb[0] + rgb[1] + rgb[2] > 224 + 224 + 224) {
 				toVisit[x + y * imageData.width] = true;
-				ImgFuncs.setColor32(imageData, x, y, 0);
+				ImgFuncs_setColor32(imageData, x, y, 0);
 				any = 1;
 			}
 		}
@@ -3387,14 +3390,14 @@ ImgFuncs.textify = function(imageData) {
 	if (any == 0) {
 		return;
 	}
-	for (var x = 0; x < imageData.width; ++x) {
-		for (var y = 0; y < imageData.height; ++y) {
+	for (let x = 0; x < imageData.width; ++x) {
+		for (let y = 0; y < imageData.height; ++y) {
 			if (toVisit[x + y * imageData.width]) {
 				var fx = fontSize * ~~(Math.random() * fontData.width / fontSize);
 				var fy = fontSize * ~~(Math.random() * fontData.height / fontSize);
-				for (var i = 0; i < fontSize; ++i) {
-					for (var j = 0; j < fontSize; ++j) {
-						ImgFuncs.setColor32(imageData, x + i, y + j, ImgFuncs.getColor32(fontData, fx + i, fy + j));
+				for (let i = 0; i < fontSize; ++i) {
+					for (let j = 0; j < fontSize; ++j) {
+						ImgFuncs_setColor32(imageData, x + i, y + j, ImgFuncs_getColor32(fontData, fx + i, fy + j));
 						toVisit[(x + i) + (y + j) * imageData.width] = false;
 					}
 				}
@@ -3408,7 +3411,7 @@ ImgFuncs.similar = function(imgDat1, imgDat2) {
 	var u81 = imgDat1.u8;
 	var u82 = imgDat2.u8;
 	var length = imgDat1.width * imgDat1.height * 4;
-	for (var i = 0; i < length; i += 4) {
+	for (let i = 0; i < length; i += 4) {
 		// var a = u81[i] + u81[i + 1] + u81[i + 2];
 		// var b = u82[i] + u82[i + 1] + u82[i + 2];
 		// var weight = (Math.abs(u81[i] - u82[i]) + Math.abs(u81[i + 1] - u82[i + 1]) + Math.abs(u81[i + 2] - u82[i + 2])) / 2
@@ -3418,6 +3421,15 @@ ImgFuncs.similar = function(imgDat1, imgDat2) {
 	}
 	return total;
 }
+
+const ImgFuncs_fixEndian = ImgFuncs.fixEndian;
+const ImgFuncs_arrTo32 = ImgFuncs.arrTo32;
+const ImgFuncs_setColorC = ImgFuncs.setColorC;
+const ImgFuncs_getColorC = ImgFuncs.getColorC;
+const ImgFuncs_setColorArr = ImgFuncs.setColorArr;
+const ImgFuncs_getColorArr = ImgFuncs.getColorArr;
+const ImgFuncs_setColor32 = ImgFuncs.setColor32;
+const ImgFuncs_getColor32 = ImgFuncs.getColor32;
 
 /* Auto Artist */
 
@@ -3442,7 +3454,7 @@ Artsy.franIt = function(state) {
 		if (state.similar == null) {
 			var emotions = new Array()
 			var maxWeight = 0;
-			for (var i = 0; i < actions.length; ++i) {
+			for (let i = 0; i < actions.length; ++i) {
 				var action = actions[i];
 				if (action["emotion"]) {
 					var emotion = action["emotion"];
@@ -3461,10 +3473,10 @@ Artsy.franIt = function(state) {
 
 			var weights = new Array();
 
-			for (var i = 0; i < emotions.length; i++) {
+			for (let i = 0; i < emotions.length; i++) {
 				var numa = emotions.length - i
 				numa *= numa;
-				for (var j = 0; j < numa; j++) {
+				for (let j = 0; j < numa; j++) {
 					weights.push(i);
 				}
 			}
@@ -3473,7 +3485,7 @@ Artsy.franIt = function(state) {
 			var maxLen = 15;
 			var len = Math.floor(Math.random() * maxLen) + 1;
 
-			for (var i = 0; i < num; ++i) {
+			for (let i = 0; i < num; ++i) {
 				var key = weights[Math.floor(Math.random() * weights.length)]
 				var valid = emotions[key];
 				if ((valid) && (!move[valid.keycode])) {
@@ -3483,7 +3495,7 @@ Artsy.franIt = function(state) {
 			}
 
 			if (Object.keys(move).length > 0) {
-				for (var i = 0; i < len; ++i) {
+				for (let i = 0; i < len; ++i) {
 					state.franMoves.push(move);
 				}
 			}
@@ -3494,12 +3506,12 @@ Artsy.franIt = function(state) {
 			var emotions = new Array()
 			if (state.ticks % 8 == 0) {
 
-				for (var i = 0; i < nonActions.length; i++) {
+				for (let i = 0; i < nonActions.length; i++) {
 					emotions.push(nonActions[i]["emotion"]);
 				}
 
 				var num = Math.floor(Math.random() * 2) + 1;
-				for (var i = 0; i < num; ++i) {
+				for (let i = 0; i < num; ++i) {
 					var valid = emotions[Math.floor(Math.random() * emotions.length)]
 					if ((valid) && (!move[valid.keycode])) {
 						move[valid.keycode] = true;
@@ -3517,7 +3529,7 @@ Artsy.franIt = function(state) {
 				state.similar = null;
 				var baser = JSON.stringify(state);
 
-				for (var i = 0; i < affectActions.length; i++) {
+				for (let i = 0; i < affectActions.length; i++) {
 					var baseState = JSON.parse(baser);
 					var action = affectActions[i];
 					var emotion = action["emotion"];
@@ -3538,7 +3550,7 @@ Artsy.franIt = function(state) {
 				emotions = emotions.filter(function(e) { return Math.abs(e.weight - max) < 64 });
 
 				var num = Math.floor(Math.random() * 8) + 1;
-				for (var i = 0; i < num; ++i) {
+				for (let i = 0; i < num; ++i) {
 					var valid = emotions[Math.floor(Math.random() * emotions.length)]
 					if ((valid) && (!move[valid.keycode])) {
 						move[valid.keycode] = true;
@@ -3565,7 +3577,7 @@ Artsy.franIt = function(state) {
 		var keys = Object.keys(move);
 		var actions = Artsy.allActions;
 		var hasKeys = false;
-		for (var i = 0; i < actions.length; ++i) {
+		for (let i = 0; i < actions.length; ++i) {
 			if (actions[i]["keycode"] > 0 && move[actions[i]["keycode"]] == true) {
 				hasKeys = true;
 				break;
