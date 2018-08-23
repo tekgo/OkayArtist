@@ -2387,14 +2387,14 @@ Artsy.brushes.col = {
 	action: function(state) {
 		var x = state.brushPoint.x;
 		var y = state.brushPoint.y;
-		for (let j = -3; j <= +3; ++j) {
-			var s = 1 + state.brushSize / 2;
-			var c0 = ImgFuncs_getColor32(state.imageData, x + j, y - s);
+		var s = 1 + state.brushSize / 2;
+		for (let j = x - 3; j <= x + 3; ++j) {
+			var c0 = ImgFuncs_getColor32(state.imageData, j, y - s);
 			for (let i = y - s; i < y + s; ++i) {
-				var c = ImgFuncs_getColor32(state.imageData, x + j, i + 1);
-				ImgFuncs_setColor32(state.imageData, x + j, i, c);
+				var c = ImgFuncs_getColor32(state.imageData, j, i + 1);
+				ImgFuncs_setColor32(state.imageData, j, i, c);
 			}
-			ImgFuncs_setColor32(state.imageData, x + j, i, c0);
+			ImgFuncs_setColor32(state.imageData, j, y + s, c0);
 		}
 		return state;
 	}
@@ -3237,9 +3237,8 @@ ImgFuncs.scaleImageData = function(imgDat1, scale) {
 }
 
 ImgFuncs.addTransparentPixel = function(imageData) {
-	var dataCopy = new Uint8Array(imageData.data);
 	var copy = new ImageData(imageData.width, imageData.height);
-	copy.data.set(dataCopy);
+	copy.data.set(imageData.data);
 	ImgFuncs.addBufferToImageData(copy);
 	copy.data[3] = 250;
 	return copy;
@@ -3288,9 +3287,8 @@ ImgFuncs.flipline = function(surface, x, y) {
 
 // Returns a copy of an image data object.
 ImgFuncs.copyData = function(imageData) {
-	var dataCopy = new Uint8Array(imageData.data);
 	var copy = new ImageData(imageData.width, imageData.height);
-	copy.data.set(dataCopy);
+	copy.data.set(imageData.data);
 	ImgFuncs.addBufferToImageData(copy);
 	return copy;
 }
