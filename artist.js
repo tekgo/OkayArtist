@@ -554,6 +554,7 @@ Input.keyDownHandler = function(e) {
 	var keyCode = e.keyCode;
 
 	if (keyCode == 192) { // Tilde
+		Input.mouseCancel();
 		Players.keyboard.pressStates = {};
 		Players.keyboard.keyStates = {};
 		Artsy.state.fran = !Artsy.state.fran;
@@ -602,6 +603,11 @@ Input.mouseUpHandler = function(e) {
 
 Input.mouseMoveHandler = function(e) {
 	Input.mousePoint = { x: e.clientX, y: e.clientY };
+	Input.mouseHandler();
+}
+
+Input.mouseCancel = function() {
+	Input.mouseDown = false;
 	Input.mouseHandler();
 }
 
@@ -2001,6 +2007,7 @@ Artsy.actions.SDL_SCANCODE_RETURN = {
 		imageGroup.push(state.imageData);
 		Gallery.saveImageGroup(imageGroup);
 		Sounder.playSound("sfx_1");
+		Input.mouseCancel();
 		return Artsy.actions.Gallery.action(state);
 	}
 }
@@ -2015,6 +2022,7 @@ Artsy.actions.Gallery = {
 		state.pressStates = {};
 		state.mouseDown = {};
 		state.touches = [];
+		Input.mouseCancel();
 		return state;
 	}
 }
