@@ -2911,16 +2911,14 @@ ImgFuncs.setColor32Idx = function(imageData, idx, color) {
 
 // Gets a u32 for an x,y coord.
 ImgFuncs.getColor32 = function(imageData, x, y) {
-	const byteOffset = imageData.byteOffset(x,y);
 	// return imageData.dataView.getUint32(byteOffset * 4);
-	return ImgFuncs_fixEndian(imageData.u32[byteOffset]);
+	return ImgFuncs_fixEndian(imageData.u32[imageData.byteOffset(x,y)]);
 }
 
 // Sets a u32 for an x,y coord.
 ImgFuncs.setColor32 = function(imageData, x, y, color) {
-	const byteOffset = imageData.byteOffset(x,y);
 	// imageData.dataView.setUint32(byteOffset * 4, ((color & 0xffffff00) | 0xff));
-	imageData.u32[byteOffset] = ImgFuncs_fixEndian(((color & 0xffffff00) | 0xff));
+	imageData.u32[imageData.byteOffset(x,y)] = ImgFuncs_fixEndian(((color & 0xffffff00) | 0xff));
 }
 
 ImgFuncs.addBufferToImageData = function(imageData) {
@@ -2949,17 +2947,18 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 	if (!imageData.byteOffset) {
 		const width = imageData.width;
 		const height = imageData.height
-		let offsetFunc = function(x, y) {
-			return ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
-		}
 		if (powerOfTwo(width) && powerOfTwo(height)) {
 			const widthM = width - 1;
 			const heightM = height - 1;
-			offsetFunc = function(x, y) {
+			imageData.byteOffset = function(x, y) {
 				return ((~~(x + width) & widthM) + (width * (~~(y + height) & heightM)))
 			}
 		}
-		imageData.byteOffset = offsetFunc;
+		else {
+			imageData.byteOffset = function(x, y) {
+				return ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
+			}
+		}
 	}
 
 	if (!imageData.dataView) {
