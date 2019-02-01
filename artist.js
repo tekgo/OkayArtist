@@ -21,49 +21,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	?	Sound.
 */
 
-// An emotion is a object that sets how the auto-artist state
-// will change when using an action. Actions without emotions will
-// not be used, actions with all-zero emotions will be randomized.
-function Emotion(keycode, joy, fear, disgust, anger, sadness) {
-	this.keycode = keycode;
-	if ((joy == 0) && (fear == 0) && (disgust == 0) && (anger == 0) && (sadness == 0)) {
-		var max = 51;
-		var half = 25;
-		joy = Math.floor(Math.random() * max) - half;
-		fear = Math.floor(Math.random() * max) - half;
-		disgust = Math.floor(Math.random() * max) - half;
-		anger = Math.floor(Math.random() * max) - half;
-		sadness = Math.floor(Math.random() * max) - half;
-	}
-	this.state = new Array(joy, fear, disgust, anger, sadness);
-
-	// How weighted an emotion is how much it gets some of the state towards zero,
-	// disregarding parts of the state that move away from zero.
-	this.compare = function(otherEmotion) {
-		var weight = 0;
-		for (let i = 0; i < this.state.length; ++i) {
-			var x = this.state[i] + otherEmotion.state[i];
-			var diff = Math.abs(this.state[i]) - Math.abs(x);
-			if (diff > 0) {
-				weight += diff;
-			}
-		}
-		return weight;
-	}
-
-	this.add = function(otherEmotion) {
-		for (let i = 0; i < this.state.length; ++i) {
-			this.state[i] += otherEmotion.state[i];
-		}
-	}
-
-	this.addm = function(otherEmotion, mul) {
-		for (let i = 0; i < this.state.length; ++i) {
-			this.state[i] += otherEmotion.state[i] * mul;
-		}
-	}
-}
-
 function Player(id, color) {
 	this.id = id;
 	this.isActive = true;
@@ -138,7 +95,8 @@ var touchKeys = [
 	new TouchKey(187, 0 / 8, 0 / 8, 1 / 8, 1 / 8), // Save / Equals
 	new TouchKey(46, 1 / 8, 0 / 8, 1 / 8, 1 / 8), // Undo / Delete
 	new TouchKey(13, 2 / 8, 0 / 8, 3 / 8, 1 / 8), // Enter
-	new TouchKey(220, 5 / 8, 0 / 8, 2 / 8, 1 / 8), // Gallery '\'
+	new TouchKey(220, 5 / 8, 0 / 8, 1 / 8, 1 / 8), // Gallery '\'
+	new TouchKey(27, 6 / 8, 0 / 8, 1 / 8, 1 / 8), // Menu esc
 	new TouchKey(192, 7 / 8, 0 / 8, 1 / 8, 1 / 8), // Auto / Tilde
 	new TouchKey(112, 0 / 12, 1 / 8, 1 / 12, 1 / 8), // F1
 	new TouchKey(113, 1 / 12, 1 / 8, 1 / 12, 1 / 8), // F2
@@ -209,28 +167,48 @@ Artsy.constants = {
 Artsy.canvas = null;
 Artsy.keyboard = null;
 
-Artsy.state = {
-	canvasNeedsUpdate: true,
-	width: Artsy.constants.defaultSize,
-	height: Artsy.constants.defaultSize,
-	imageData: new ImageData(Artsy.constants.defaultSize, Artsy.constants.defaultSize),
-	brushType: 0,
-	brushSize: 1,
-	brushPoint: {
-		x: 50,
-		y: 50
-	},
-	haskeyed: false,
-	keyStates: {},
-	pressStates: {},
-	lockedRegions: new Array(),
-	newLockedRegions: new Array(),
-	ticks: 0,
-	blip: true,
-	saveState: null,
-	similar: null,
-	similarImg: null
-}
+Artsy.createState = function(options = {}) {
+	const defaultOptions = {
+		size: Artsy.constants.defaultSize,
+		brushSizeMultiplier: 1,
+	}
+
+	const theOptions = Object.assign(defaultOptions, options);
+	const size = theOptions.size || Artsy.constants.defaultSize;
+
+	let state = {
+		canvasNeedsUpdate: true,
+		width: size,
+		height: size,
+		imageData: new ImageData(size, size),
+		brushType: 0,
+		brushSize: 1,
+		brushPoint: {
+			x: 50,
+			y: 50
+		},
+		haskeyed: false,
+		keyStates: {},
+		pressStates: {},
+		lockedRegions: new Array(),
+		newLockedRegions: new Array(),
+		ticks: 0,
+		blip: true,
+		saveState: null,
+		similar: null,
+		similarImg: null
+	};
+
+	state.fran = true;
+	state.franMoves = new Array();
+	state.franEmotion = new Emotion(0, 0, 0, 0, 0, 0);
+
+	state.brushSizeMultiplier  = theOptions.brushSizeMultiplier || 1;
+
+	return state;
+} 
+
+Artsy.state = Artsy.createState({});
 
 Artsy.history = [];
 Artsy.historyTicks = 0;
@@ -293,7 +271,7 @@ Artsy.start = function() {
 	Artsy.canvas.ondrop = function(e) {
 		this.className = '';
 		e.preventDefault();
-		Artsy.readfiles(e.dataTransfer.files, false);
+		Artsy.readfiles(e.dataTransfer.files, false, Artsy.state);
 	}
 
 	Artsy.keyboard.ondragover = function() { this.className = 'hover'; return false; };
@@ -301,14 +279,14 @@ Artsy.start = function() {
 	Artsy.keyboard.ondrop = function(e) {
 		this.className = '';
 		e.preventDefault();
-		Artsy.readfiles(e.dataTransfer.files, true);
+		Artsy.readfiles(e.dataTransfer.files, true, Artsy.state);
 	}
 
 	Input.requestMIDIAccess();
 
 };
 
-Artsy.readfiles = function(files, similar) {
+Artsy.readfiles = function(files, similar, state) {
 	// Only care about the first file.
 	var file = files[0];
 	if (file != undefined) {
@@ -320,8 +298,8 @@ Artsy.readfiles = function(files, similar) {
 				var canvas = document.createElement('canvas');
 				var context = canvas.getContext('2d');
 				// Draw it onto a artsy size canvas
-				let cnvWidth = Artsy.state.width;
-				let cnvHeight = Artsy.state.height;
+				let cnvWidth = state.width;
+				let cnvHeight = state.height;
 				canvas.width = cnvWidth;
 				canvas.height = cnvHeight;
 				var width = Math.min(cnvWidth, image.width);
@@ -332,13 +310,13 @@ Artsy.readfiles = function(files, similar) {
 				var imgDat = context.getImageData(0, 0, cnvWidth, cnvHeight);
 				ImgFuncs.addBufferToImageData(imgDat);
 				if (similar == true) {
-					Artsy.state.similar = imgDat;
+					state.similar = imgDat;
 					var newImage = new Image();
 					newImage.src = canvas.toDataURL();
-					Artsy.state.similarImg = newImage;
-					Artsy.state.fran = true;
+					state.similarImg = newImage;
+					state.fran = true;
 				} else {
-					Artsy.state.imageData = imgDat;
+					state.imageData = imgDat;
 				}
 			}
 		};
@@ -371,6 +349,7 @@ Artsy.performActionsForState = function(state) {
 
 // Per frame update.
 Artsy.update = function() {
+
 	++Artsy.state.ticks;
 
 	// Dupe the imageData for locked region support.
@@ -396,7 +375,7 @@ Artsy.update = function() {
 		}
 	}
 
-	if (Artsy.state.canvasNeedsUpdate == true) {
+	if (!Artsy.state.paused && Artsy.state.canvasNeedsUpdate == true) {
 
 		// For each locked region reset the region to it's state before the update.
 		Artsy.state.lockedRegions = Artsy.state.newLockedRegions.concat(Artsy.state.lockedRegions);
@@ -418,7 +397,10 @@ Artsy.update = function() {
 
 		}
 
+		Artsy.canvas.width = Artsy.state.width;
+		Artsy.canvas.height = Artsy.state.height;
 		var ctx = Artsy.canvas.getContext('2d');
+		// ctx.drawImage(Artsy.state.imageData, 0, 0);
 		ctx.putImageData(Artsy.state.imageData, 0, 0);
 
 		// Draw the brush point.
@@ -699,14 +681,16 @@ function GamepadState(gamepad) {
 				this.right = true;
 			}
 		}
-		if (gamepad.buttons[0].pressed) {
-			this.aButton = true;
-		}
-		if (gamepad.buttons[1].pressed) {
-			this.bButton = true;
-		}
-		if (gamepad.buttons[2].pressed) {
-			this.cButton = true;
+		if (gamepad.buttons) {
+			if (gamepad.buttons[0] && gamepad.buttons[0].pressed) {
+				this.aButton = true;
+			}
+			if (gamepad.buttons[1] &&gamepad.buttons[1].pressed) {
+				this.bButton = true;
+			}
+			if (gamepad.buttons[2] &&gamepad.buttons[2].pressed) {
+				this.cButton = true;
+			}
 		}
 
 		// Axes range from -1.0 - 1.0, keeping a 0.25-ish deadzone?
@@ -726,11 +710,16 @@ function GamepadState(gamepad) {
 }
 
 Input.gamepadConnected = function(event) {
-	console.log(event.gamepad);
-	Input.gamepads.push(event.gamepad);
+	let gamepad = event.gamepad;
+	if (gamepad.mapping !== "standard") {
+		return;
+	}
+	
+	console.log(gamepad);
+	Input.gamepads.push(gamepad);
 
 	var gamepadPlayer = new Player();
-	gamepadPlayer.gamepad = event.gamepad;
+	gamepadPlayer.gamepad = gamepad;
 	gamepadPlayer.gamepadState = new GamepadState();
 	gamepadPlayer.currentTool = Input.randomTool;
 	var newBrush = Input.randomBrush();
@@ -1194,6 +1183,31 @@ Gallery.displayGallery = function(force = false) {
 
 }
 
+/* menu */
+
+Menu = {};
+
+Menu.display = function() {
+	var currentMenu = document.getElementById("menu")
+	if (currentMenu) {
+		currentMenu.remove();
+		return;
+	}
+	var newMenu = document.createElement("div");
+	newMenu.id = "menu";
+	var close = document.createElement("div");
+	close.innerHTML = "X";
+	close.onclick = function() { Menu.display() };
+	newMenu.appendChild(close);
+
+	var menuContents = document.createElement("div");
+	menuContents.innerHTML = ``;
+	newMenu.appendChild(menuContents);
+
+	document.body.appendChild(newMenu);
+}
+
+
 /* Actions */
 
 Artsy.actions = {}
@@ -1579,9 +1593,9 @@ Artsy.actions.SDL_SCANCODE_U = {
 	emotion: new Emotion(85, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var output = state.imageData;
-		var w = state.imageData.width;
-		var h = state.imageData.height;
-		var max = w * h;
+		const w = state.imageData.width;
+		const h = state.imageData.height;
+		const max = w * h;
 
 		function idx(_i) {
 			var __i = _i - 1;
@@ -1594,14 +1608,14 @@ Artsy.actions.SDL_SCANCODE_U = {
 		}
 
 		function pass(idxf, swapf) {
-			var pt = idxf(1);
-			var x2 = pt.x;
-			var y2 = pt.y;
-			var c2 = ImgFuncs_getColor32(output, x2, y2);
-			var x1 = x2;
-			var y1 = y2;
-			var pt2 = idxf(i + 1)
-			var c1 = c2;
+			let pt = idxf(1);
+			let x2 = pt.x;
+			let y2 = pt.y;
+			let c2 = ImgFuncs_getColor32(output, x2, y2);
+			let x1 = x2;
+			let y1 = y2;
+			let pt2 = idxf(i + 1)
+			let c1 = c2;
 			for (let i = 1; i < max - 1; ++i) {
 				x1 = x2;
 				y1 = y2;
@@ -1610,12 +1624,10 @@ Artsy.actions.SDL_SCANCODE_U = {
 				y2 = pt2.y;
 				c1 = c2;
 				c2 = ImgFuncs_getColor32(output, x2, y2);
-				var colors = swapf(ImgFuncs.lesser(c1, c2), ImgFuncs.greater(c1, c2));
-				var less = colors.a;
-				var great = colors.b;
-				ImgFuncs_setColor32(output, x1, y1, less);
-				ImgFuncs_setColor32(output, x2, y2, great);
-				c2 = great;
+				const colors = swapf(ImgFuncs.lesser(c1, c2), ImgFuncs.greater(c1, c2));
+				ImgFuncs_setColor32(output, x1, y1, colors.a);
+				ImgFuncs_setColor32(output, x2, y2, colors.b);
+				c2 = colors.b;
 			}
 		}
 		for (let im = 1; im <= 4; ++im) {
@@ -2027,6 +2039,21 @@ Artsy.actions.Gallery = {
 	}
 }
 
+Artsy.actions.Menu = {
+	name: "Menu",
+	affectsCanvas: false,
+	pressCode: 27, // 'esc'
+	action: function(state) {
+		Menu.display()
+		state.keyStates = {};
+		state.pressStates = {};
+		state.mouseDown = {};
+		state.touches = [];
+		Input.mouseCancel();
+		return state;
+	}
+}
+
 Artsy.actions.SDL_SCANCODE_1 = {
 	name: "SDL_SCANCODE_1",
 	affectsCanvas: false,
@@ -2153,7 +2180,7 @@ Artsy.actions.SDL_SCANCODE_F1 = {
 	pressCode: 112, // 
 	emotion: new Emotion(112, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 1;
+		state.brushSize = 1 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_1");
 		return state;
 	}
@@ -2165,7 +2192,7 @@ Artsy.actions.SDL_SCANCODE_F2 = {
 	pressCode: 113, // 
 	emotion: new Emotion(113, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 2;
+		state.brushSize = 2 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_2");
 		return state;
 	}
@@ -2177,7 +2204,7 @@ Artsy.actions.SDL_SCANCODE_F3 = {
 	pressCode: 114, // 
 	emotion: new Emotion(114, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 4;
+		state.brushSize = 4 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_3");
 		return state;
 	}
@@ -2189,7 +2216,7 @@ Artsy.actions.SDL_SCANCODE_F4 = {
 	pressCode: 115, // 
 	emotion: new Emotion(115, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 8;
+		state.brushSize = 8 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_4");
 		return state;
 	}
@@ -2201,7 +2228,7 @@ Artsy.actions.SDL_SCANCODE_F5 = {
 	pressCode: 116, // 
 	emotion: new Emotion(116, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 16;
+		state.brushSize = 16 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_5");
 		return state;
 	}
@@ -2213,7 +2240,7 @@ Artsy.actions.SDL_SCANCODE_F6 = {
 	pressCode: 117, // 
 	emotion: new Emotion(117, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 24;
+		state.brushSize = 24 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_6");
 		return state;
 	}
@@ -2225,7 +2252,7 @@ Artsy.actions.SDL_SCANCODE_F7 = {
 	pressCode: 118, // 
 	emotion: new Emotion(118, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 32;
+		state.brushSize = 32 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_7");
 		return state;
 	}
@@ -2249,7 +2276,7 @@ Artsy.actions.SDL_SCANCODE_F9 = {
 	pressCode: 120, // 
 	emotion: new Emotion(120, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 56;
+		state.brushSize = 56 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_9");
 		return state;
 	}
@@ -2261,7 +2288,7 @@ Artsy.actions.SDL_SCANCODE_F10 = {
 	pressCode: 121, // 
 	emotion: new Emotion(121, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 64;
+		state.brushSize = 64 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_10");
 		return state;
 	}
@@ -2273,7 +2300,7 @@ Artsy.actions.SDL_SCANCODE_F11 = {
 	pressCode: 122, // 
 	emotion: new Emotion(122, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 96;
+		state.brushSize = 96 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_11");
 		return state;
 	}
@@ -2285,7 +2312,7 @@ Artsy.actions.SDL_SCANCODE_F12 = {
 	pressCode: 123, // 
 	emotion: new Emotion(123, 0, 0, 0, 0, 0),
 	action: function(state) {
-		state.brushSize = 128;
+		state.brushSize = 128 * state.brushSizeMultiplier;
 		Sounder.playSound("numkey_12");
 		return state;
 	}
@@ -3426,11 +3453,50 @@ const ImgFuncs_getColorArr = ImgFuncs.getColorArr;
 const ImgFuncs_setColor32 = ImgFuncs.setColor32;
 const ImgFuncs_getColor32 = ImgFuncs.getColor32;
 
-/* Auto Artist */
+// An emotion is a object that sets how the auto-artist state
+// will change when using an action. Actions without emotions will
+// not be used, actions with all-zero emotions will be randomized.
+function Emotion(keycode, joy, fear, disgust, anger, sadness) {
+	this.keycode = keycode;
+	if ((joy == 0) && (fear == 0) && (disgust == 0) && (anger == 0) && (sadness == 0)) {
+		var max = 51;
+		var half = 25;
+		joy = Math.floor(Math.random() * max) - half;
+		fear = Math.floor(Math.random() * max) - half;
+		disgust = Math.floor(Math.random() * max) - half;
+		anger = Math.floor(Math.random() * max) - half;
+		sadness = Math.floor(Math.random() * max) - half;
+	}
+	this.state = new Array(joy, fear, disgust, anger, sadness);
 
-Artsy.state.fran = true;
-Artsy.state.franMoves = new Array();
-Artsy.state.franEmotion = new Emotion(0, 0, 0, 0, 0, 0);
+	// How weighted an emotion is how much it gets some of the state towards zero,
+	// disregarding parts of the state that move away from zero.
+	this.compare = function(otherEmotion) {
+		var weight = 0;
+		for (let i = 0; i < this.state.length; ++i) {
+			var x = this.state[i] + otherEmotion.state[i];
+			var diff = Math.abs(this.state[i]) - Math.abs(x);
+			if (diff > 0) {
+				weight += diff;
+			}
+		}
+		return weight;
+	}
+
+	this.add = function(otherEmotion) {
+		for (let i = 0; i < this.state.length; ++i) {
+			this.state[i] += otherEmotion.state[i];
+		}
+	}
+
+	this.addm = function(otherEmotion, mul) {
+		for (let i = 0; i < this.state.length; ++i) {
+			this.state[i] += otherEmotion.state[i] * mul;
+		}
+	}
+}
+
+/* Auto Artist */
 
 // Run the auto-artist.
 Artsy.franIt = function(state) {
