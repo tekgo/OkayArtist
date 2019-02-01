@@ -1255,27 +1255,34 @@ Artsy.actions.also_do_something_neat_idk = {
 	emotion: new Emotion(77, 1, 2, 3, 0, 0),
 	action: function(state) {
 		var output = state.imageData
-		for (let x = 0; x < output.width; ++x) {
-			for (let y = 0; y < output.height; ++y) {
+		let width = output.width;
+		let height = output.height;
+		for (let x = 0; x < width; ++x) {
+			for (let y = 0; y < height; ++y) {
+
+				let xm = ImgFuncs_getColor32(output, x - 1, y);
+				let xp = ImgFuncs_getColor32(output, x + 1, y);
+				let ym = ImgFuncs_getColor32(output, x, y - 1);
+				let yp = ImgFuncs_getColor32(output, x, y + 1);
 
 				for (let i = 0; i < 3; ++i) {
 					var e = uint32(0);
 					var d = uint32(0);
 
 					if (x > 0) {
-						d = uint32(ImgFuncs_getColor32(output, x - 1, y) >> (i * 8)) & 0xff;
+						d = uint32(xm >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 					}
 					if (y > 0) {
-						d = uint32(ImgFuncs_getColor32(output, x, y - 1) >> (i * 8)) & 0xff;
+						d = uint32(ym >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 					}
-					if (x < output.width - 1) {
-						d = uint32(ImgFuncs_getColor32(output, x + 1, y) >> (i * 8)) & 0xff;
+					if (x < width - 1) {
+						d = uint32(xp >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 					}
-					if (y < output.height - 1) {
-						d = uint32(ImgFuncs_getColor32(output, x, y + 1) >> (i * 8)) & 0xff;
+					if (y < height - 1) {
+						d = uint32(yp >> (i * 8)) & 0xff;
 						e = uint32(e | d);
 					}
 
