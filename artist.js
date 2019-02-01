@@ -95,8 +95,7 @@ var touchKeys = [
 	new TouchKey(187, 0 / 8, 0 / 8, 1 / 8, 1 / 8), // Save / Equals
 	new TouchKey(46, 1 / 8, 0 / 8, 1 / 8, 1 / 8), // Undo / Delete
 	new TouchKey(13, 2 / 8, 0 / 8, 3 / 8, 1 / 8), // Enter
-	new TouchKey(220, 5 / 8, 0 / 8, 1 / 8, 1 / 8), // Gallery '\'
-	new TouchKey(27, 6 / 8, 0 / 8, 1 / 8, 1 / 8), // Menu esc
+	new TouchKey(220, 5 / 8, 0 / 8, 2 / 8, 1 / 8), // Gallery '\'
 	new TouchKey(192, 7 / 8, 0 / 8, 1 / 8, 1 / 8), // Auto / Tilde
 	new TouchKey(112, 0 / 12, 1 / 8, 1 / 12, 1 / 8), // F1
 	new TouchKey(113, 1 / 12, 1 / 8, 1 / 12, 1 / 8), // F2
