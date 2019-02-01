@@ -353,7 +353,11 @@ Artsy.update = function() {
 	++Artsy.state.ticks;
 
 	// Dupe the imageData for locked region support.
-	var copy = ImgFuncs.copyData(Artsy.state.imageData);
+	var copy = Artsy.state.prevCopy
+	if (!copy) {
+		copy = ImgFuncs.copyData(Artsy.state.imageData);
+		Artsy.state.prevCopy = copy;
+	}
 
 	// Update non-keyboard/touch inputsd.
 	Input.updateInputs();
@@ -376,6 +380,8 @@ Artsy.update = function() {
 	}
 
 	if (!Artsy.state.paused && Artsy.state.canvasNeedsUpdate == true) {
+
+		Artsy.state.prevCopy = null;
 
 		// For each locked region reset the region to it's state before the update.
 		Artsy.state.lockedRegions = Artsy.state.newLockedRegions.concat(Artsy.state.lockedRegions);
@@ -416,7 +422,7 @@ Artsy.update = function() {
 			}
 		}
 
-		Artsy.canvasNeedsUpdate = false;
+		Artsy.state.canvasNeedsUpdate = false;
 
 		// Color new locked regions yellow.
 		for (let i = 0; i < Artsy.state.newLockedRegions.length; ++i) {
@@ -427,7 +433,7 @@ Artsy.update = function() {
 			ctx.fillStyle = "rgba(255,255,127,1)";
 			ctx.fillRect(x, y, size, size);
 
-			Artsy.canvasNeedsUpdate = true;
+			Artsy.state.canvasNeedsUpdate = true;
 		}
 
 		var message = [];
@@ -938,9 +944,7 @@ var midiAction = function(type, value) {
 	return { "type": type, "value": value }
 }
 
-Input.updateMIDI = function() {
-
-	var genericDict = {
+Input.genericMidiDict = {
 		"channel": {
 			"2": {
 				48: midiAction("keypress", 112), // F1
@@ -1001,6 +1005,10 @@ Input.updateMIDI = function() {
 			}
 		}
 	};
+
+Input.updateMIDI = function() {
+
+	var genericDict = Input.genericMidiDict;
 
 	var changed = false;
 
