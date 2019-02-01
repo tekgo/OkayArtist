@@ -1256,44 +1256,45 @@ Artsy.actions.also_do_something_neat_idk = {
 		var output = state.imageData
 		let width = output.width;
 		let height = output.height;
+		let scratch = new Uint32Array(9);
 		for (let x = 0; x < width; ++x) {
 			for (let y = 0; y < height; ++y) {
 
-				let xm = ImgFuncs_getColor32(output, x - 1, y);
-				let xp = ImgFuncs_getColor32(output, x + 1, y);
-				let ym = ImgFuncs_getColor32(output, x, y - 1);
-				let yp = ImgFuncs_getColor32(output, x, y + 1);
+				scratch[0] = ImgFuncs_getColor32(output, x - 1, y);
+				scratch[1] = ImgFuncs_getColor32(output, x + 1, y);
+				scratch[2] = ImgFuncs_getColor32(output, x, y - 1);
+				scratch[3] = ImgFuncs_getColor32(output, x, y + 1);
 
 				for (let i = 0; i < 3; ++i) {
-					var e = uint32(0);
-					var d = uint32(0);
-					var offset = uint32(i * 8);
+					scratch[4] = 0;
+					scratch[5] = 0;
+					scratch[6] = i * 8;
 
 					if (x > 0) {
-						d = uint32(xm >> (offset)) & 0xff;
-						e |= d;
+						scratch[5] = (scratch[0] >> (scratch[6])) & 0xff;
+						scratch[4] |= scratch[5];
 					}
 					if (y > 0) {
-						d = uint32(ym >> (offset)) & 0xff;
-						e |= d;
+						scratch[5] = (scratch[2] >> (scratch[6])) & 0xff;
+						scratch[4] |= scratch[5];
 					}
 					if (x < width - 1) {
-						d = uint32(xp >> (offset)) & 0xff;
-						e |= d;
+						scratch[5] = (scratch[1] >> (scratch[6])) & 0xff;
+						scratch[4] |= scratch[5];
 					}
 					if (y < height - 1) {
-						d = uint32(yp >> (offset)) & 0xff;
-						e |= d;
+						scratch[5] = (scratch[3] >> (scratch[6])) & 0xff;
+						scratch[4] |= scratch[5];
 					}
 
-					var c1 = uint32(ImgFuncs_getColor32(state.imageData, x, y));
-					var c2 = uint32(c1 | (uint32(e) << offset));
-					if (c2 > c1) {
-						++c1;
-					} else if (c2 < c1) {
-						--c1;
+					scratch[7] = ImgFuncs_getColor32(state.imageData, x, y);
+					scratch[8]= (scratch[7] | (scratch[4] << scratch[6]));
+					if (scratch[8] > scratch[7]) {
+						++scratch[7];
+					} else if (scratch[8] < scratch[7]) {
+						--scratch[7];
 					}
-					ImgFuncs_setColor32(state.imageData, x, y, c1);
+					ImgFuncs_setColor32(state.imageData, x, y, scratch[7]);
 				}
 			}
 		}
