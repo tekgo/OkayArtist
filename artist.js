@@ -407,7 +407,7 @@ Artsy.update = function() {
 		Artsy.canvas.height = Artsy.state.height;
 		var ctx = Artsy.canvas.getContext('2d');
 		// ctx.drawImage(Artsy.state.imageData, 0, 0);
-		ctx.putImageData(Artsy.state.imageData, 0, 0);
+		ImgFuncs.putImageData(ctx, Artsy.state.imageData);
 
 		// Draw the brush point.
 		if (Artsy.state.blip == true) {
@@ -3458,6 +3458,10 @@ ImgFuncs.similar = function(imgDat1, imgDat2) {
 	}
 	return total;
 }
+
+ImgFuncs.putImageData = function(ctx, imageData) {
+	ctx.putImageData(imageData, 0, 0);
+};
 
 const ImgFuncs_fixEndian = ImgFuncs.fixEndian;
 const ImgFuncs_arrTo32 = ImgFuncs.arrTo32;
