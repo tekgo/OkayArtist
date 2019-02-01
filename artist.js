@@ -1268,26 +1268,27 @@ Artsy.actions.also_do_something_neat_idk = {
 				for (let i = 0; i < 3; ++i) {
 					var e = uint32(0);
 					var d = uint32(0);
+					var offset = uint32(i * 8);
 
 					if (x > 0) {
-						d = uint32(xm >> (i * 8)) & 0xff;
-						e = uint32(e | d);
+						d = uint32(xm >> (offset)) & 0xff;
+						e |= d;
 					}
 					if (y > 0) {
-						d = uint32(ym >> (i * 8)) & 0xff;
-						e = uint32(e | d);
+						d = uint32(ym >> (offset)) & 0xff;
+						e |= d;
 					}
 					if (x < width - 1) {
-						d = uint32(xp >> (i * 8)) & 0xff;
-						e = uint32(e | d);
+						d = uint32(xp >> (offset)) & 0xff;
+						e |= d;
 					}
 					if (y < height - 1) {
-						d = uint32(yp >> (i * 8)) & 0xff;
-						e = uint32(e | d);
+						d = uint32(yp >> (offset)) & 0xff;
+						e |= d;
 					}
 
 					var c1 = uint32(ImgFuncs_getColor32(state.imageData, x, y));
-					var c2 = c1 | (uint32(e) << uint32(i * 8))
+					var c2 = uint32(c1 | (uint32(e) << offset));
 					if (c2 > c1) {
 						++c1;
 					} else if (c2 < c1) {
