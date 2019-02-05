@@ -378,11 +378,7 @@ Artsy.update = function() {
 		}
 	}
 
-	if (!Artsy.state.paused && Artsy.state.canvasNeedsUpdate == true) {
-
-		Artsy.state.prevCopy = null;
-
-		// For each locked region reset the region to it's state before the update.
+	if (!Artsy.state.paused) {
 		Artsy.state.lockedRegions = Artsy.state.newLockedRegions.concat(Artsy.state.lockedRegions);
 		for (let i = 0; i < Artsy.state.lockedRegions.length; ++i) {
 			var region = Artsy.state.lockedRegions[i];
@@ -390,6 +386,20 @@ Artsy.update = function() {
 				break;
 			}
 			region.lifetime -= 1 / 60;
+		}
+		Artsy.state.lockedRegions = Artsy.state.lockedRegions.filter(region => region.lifetime > 0);
+	}
+
+	if (!Artsy.state.paused && Artsy.state.canvasNeedsUpdate == true) {
+
+		Artsy.state.prevCopy = null;
+
+		// For each locked region reset the region to it's state before the update.
+		for (let i = 0; i < Artsy.state.lockedRegions.length; ++i) {
+			var region = Artsy.state.lockedRegions[i];
+			if (region.lifetime <= 0) {
+				break;
+			}
 			var size = region.size;
 			var sx = region.x * size;
 			var sy = region.y * size;
