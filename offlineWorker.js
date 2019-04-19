@@ -1,17 +1,17 @@
 const fileList = [
-	'/artist.js',
-	'/board.png',
-	'/board.pxi',
-	'/font8x8.png',
-	'/gif.js',
-	'/gif.worker.js',
-	'/imageDisplay.html',
-	'/index.html',
-	'/offlineSupport.js',
-	'/'
+	'/OkayArtist/artist.js',
+	'/OkayArtist/board.png',
+	'/OkayArtist/board.pxi',
+	'/OkayArtist/font8x8.png',
+	'/OkayArtist/gif.js',
+	'/OkayArtist/gif.worker.js',
+	'/OkayArtist/imageDisplay.html',
+	'/OkayArtist/index.html',
+	'/OkayArtist/offlineSupport.js',
+	'/OkayArtist/'
 ];
 
-const version = 'x2';
+const version = 'x3';
 
 self.addEventListener('install', function(event) {
 	event.waitUntil(
