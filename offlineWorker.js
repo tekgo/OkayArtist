@@ -11,7 +11,7 @@ const fileList = [
 	'/'
 ];
 
-const version = 'x1';
+const version = 'x2';
 
 self.addEventListener('install', function(event) {
 	event.waitUntil(
