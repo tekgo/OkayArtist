@@ -511,7 +511,7 @@ Artsy.createCanvas = function(w, h) {
 Artsy.findAllActions = function() {
 	var actions = new Array()
 	var keys = Object.keys(Artsy.actions)
-	for (i = 0; i < keys.length; ++i) {
+	for (let i = 0; i < keys.length; ++i) {
 		var key = keys[i]
 		if (typeof key !== 'undefined' && typeof Artsy.actions[key] !== 'undefined' && Artsy.actions[key] != null) {
 			var action = Artsy.actions[key];
@@ -526,7 +526,7 @@ Artsy.findAllActions = function() {
 Artsy.findAllBrushes = function() {
 	var brushes = new Array()
 	var keys = Object.keys(Artsy.brushes)
-	for (i = 0; i < keys.length; ++i) {
+	for (let i = 0; i < keys.length; ++i) {
 		var key = keys[i]
 		if (typeof key !== 'undefined' && typeof Artsy.brushes[key] !== 'undefined' && Artsy.brushes[key] != null) {
 			var brush = Artsy.brushes[key];
@@ -1274,38 +1274,34 @@ Artsy.actions.also_do_something_neat_idk = {
 				scratch[1] = ImgFuncs_getColor32(output, x + 1, y);
 				scratch[2] = ImgFuncs_getColor32(output, x, y - 1);
 				scratch[3] = ImgFuncs_getColor32(output, x, y + 1);
+				scratch[7] = ImgFuncs_getColor32(state.imageData, x, y);
 
-				for (let i = 0; i < 3; ++i) {
+				for (let i = 1; i < 4; ++i) {
 					scratch[4] = 0;
-					scratch[5] = 0;
 					scratch[6] = i * 8;
 
 					if (x > 0) {
-						scratch[5] = (scratch[0] >> (scratch[6])) & 0xff;
-						scratch[4] |= scratch[5];
+						scratch[4] |= (scratch[0] >> (scratch[6])) & 0xff;
 					}
 					if (y > 0) {
-						scratch[5] = (scratch[2] >> (scratch[6])) & 0xff;
-						scratch[4] |= scratch[5];
+						scratch[4] |= (scratch[2] >> (scratch[6])) & 0xff;
 					}
 					if (x < width - 1) {
-						scratch[5] = (scratch[1] >> (scratch[6])) & 0xff;
-						scratch[4] |= scratch[5];
+						scratch[4] |= (scratch[1] >> (scratch[6])) & 0xff;
 					}
 					if (y < height - 1) {
-						scratch[5] = (scratch[3] >> (scratch[6])) & 0xff;
-						scratch[4] |= scratch[5];
+						scratch[4] |= (scratch[3] >> (scratch[6])) & 0xff;
 					}
 
-					scratch[7] = ImgFuncs_getColor32(state.imageData, x, y);
 					scratch[8]= (scratch[7] | (scratch[4] << scratch[6]));
 					if (scratch[8] > scratch[7]) {
 						++scratch[7];
 					} else if (scratch[8] < scratch[7]) {
 						--scratch[7];
 					}
-					ImgFuncs_setColor32(state.imageData, x, y, scratch[7]);
+					scratch[7] |= 0xff
 				}
+				ImgFuncs_setColor32(state.imageData, x, y, scratch[7]);
 			}
 		}
 
@@ -1387,7 +1383,7 @@ Artsy.actions.do_another_thing = {
 
 				var c1 = ImgFuncs_getColorArr(output, x, y);
 				var c2 = ImgFuncs_getColorArr(output, nx, ny);
-				for (i = 0; i < 3; ++i) {
+				for (let i = 0; i < 3; ++i) {
 					c1[i] = ((c1[i] % 64) + (61 * Math.floor(c1[i] / 64)) + (2 * Math.floor(c2[i] / 64)) + Math.floor(c2[(i + 1) % 3] / 64)) % 256;
 				}
 
@@ -1640,7 +1636,7 @@ Artsy.actions.SDL_SCANCODE_U = {
 			let c2 = ImgFuncs_getColor32(output, x2, y2);
 			let x1 = x2;
 			let y1 = y2;
-			let pt2 = idxf(i + 1)
+			let pt2 = pt;
 			let c1 = c2;
 			for (let i = 1; i < max - 1; ++i) {
 				x1 = x2;
@@ -2998,13 +2994,18 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 	}
 
 	if (!imageData.byteOffset) {
-		const width = imageData.width;
-		const height = imageData.height
-		if (powerOfTwo(width) && powerOfTwo(height)) {
-			const widthM = width - 1;
-			const heightM = height - 1;
+		const width = ~~imageData.width;
+		const height = ~~imageData.height;
+		if (imageData.width == 128 && imageData.height == 128) {
 			imageData.byteOffset = function(x, y) {
-				return ((~~(x + width) & widthM) + (width * (~~(y + height) & heightM)))
+				return (((~~x + 128) & 127) + (128 * ((~~y + 128) & 127)))
+			}
+		}
+		else if (powerOfTwo(width) && powerOfTwo(height)) {
+			const widthM = ~~(width - 1);
+			const heightM = ~~(height - 1);
+			imageData.byteOffset = function(x, y) {
+				return (((~~x + width) & widthM) + (width * ((~~y + height) & heightM)))
 			}
 		}
 		else {
@@ -3014,9 +3015,9 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 		}
 	}
 
-	if (!imageData.dataView) {
-		imageData.dataView = new DataView(imageData.data.buffer)
-	}
+	// if (!imageData.dataView) {
+	// 	imageData.dataView = new DataView(imageData.data.buffer)
+	// }
 }
 
 // Gets a 3 item array for an x,y coord.
@@ -3028,11 +3029,14 @@ ImgFuncs.getColorArr = function(imageData, x, y) {
 
 // Gets a 3 item array for an x,y coord.
 ImgFuncs.setColorArr = function(imageData, x, y, color) {
-	const newColor = (((color[0] & 0xff) << 24) |
+	// const newColor = (((color[0] & 0xff) << 24) |
+	// 	((color[1] & 0xff) << 16) |
+	// 	((color[2] & 0xff) << 8) |
+	// 	(0xff));
+	ImgFuncs_setColor32(imageData, x, y, (((color[0] & 0xff) << 24) |
 		((color[1] & 0xff) << 16) |
 		((color[2] & 0xff) << 8) |
-		(0xff));
-	ImgFuncs_setColor32(imageData, x, y, newColor);
+		(0xff)));
 }
 
 // Gets a channel value for an x,y coord.
@@ -3228,10 +3232,10 @@ ImgFuncs.skewx_channel = function(surface, fx, fy, fw, fh, by, channel) {
 }
 
 // Returns the lesser elements of each channel between two arrays.
-ImgFuncs.lesser = function(a, b) {
-	var r = Math.min((a >> 24) & 0xff, (b >> 24) & 0xff);
-	var g = Math.min((a >> 16) & 0xff, (b >> 16) & 0xff);
-	var b = Math.min((a >> 8) & 0xff, (b >> 8) & 0xff);
+ImgFuncs.lesser = function(x, y) {
+	const r = Math.min((x >> 24) & 0xff, (y >> 24) & 0xff);
+	const g = Math.min((x >> 16) & 0xff, (y >> 16) & 0xff);
+	const b = Math.min((x >> 8) & 0xff, (y >> 8) & 0xff);
 
 	return (((r & 0xff) << 24) |
 		((g & 0xff) << 16) |
@@ -3240,11 +3244,10 @@ ImgFuncs.lesser = function(a, b) {
 }
 
 // Returns the greater elements of each channel between two arrays.
-ImgFuncs.greater = function(a, b) {
-
-	var r = Math.max((a >> 24) & 0xff, (b >> 24) & 0xff);
-	var g = Math.max((a >> 16) & 0xff, (b >> 16) & 0xff);
-	var b = Math.max((a >> 8) & 0xff, (b >> 8) & 0xff);
+ImgFuncs.greater = function(x, y) {
+	const r = Math.max((x >> 24) & 0xff, (y >> 24) & 0xff);
+	const g = Math.max((x >> 16) & 0xff, (y >> 16) & 0xff);
+	const b = Math.max((x >> 8) & 0xff, (y >> 8) & 0xff);
 
 	return (((r & 0xff) << 24) |
 		((g & 0xff) << 16) |
@@ -3257,21 +3260,21 @@ ImgFuncs.unswap = function(a, b) { return { a: b, b: a } }
 
 // Returns a dataURL for an imageData object.
 ImgFuncs.toDataURL = function(imageData) {
-	var canvas = document.createElement("canvas");
+	let canvas = document.createElement("canvas");
 	canvas.width = imageData.width;
 	canvas.height = imageData.height;
-	var ctx = canvas.getContext('2d');
+	let ctx = canvas.getContext('2d');
 	ctx.putImageData(imageData, 0, 0);
 	return canvas.toDataURL();
 }
 
 // Nearest neighbor scale for an imageData.
 ImgFuncs.scaleImageData = function(imgDat1, scale) {
-	var imgDat2 = new ImageData(imgDat1.width * scale, imgDat1.height * scale);
-	var pix1 = new Uint32Array(imgDat1.data.buffer);
-	var pix2 = new Uint32Array(imgDat2.data.buffer);
-	var canvasWidth1 = imgDat1.width;
-	var canvasWidth2 = imgDat2.width;
+	let imgDat2 = new ImageData(imgDat1.width * scale, imgDat1.height * scale);
+	let pix1 = new Uint32Array(imgDat1.data.buffer);
+	let pix2 = new Uint32Array(imgDat2.data.buffer);
+	let canvasWidth1 = imgDat1.width;
+	let canvasWidth2 = imgDat2.width;
 	for (let x = 0; x < imgDat1.width; ++x) {
 		for (let y = 0; y < imgDat1.height; ++y) {
 			var idx = y * imgDat1.width + x;
@@ -3287,7 +3290,7 @@ ImgFuncs.scaleImageData = function(imgDat1, scale) {
 }
 
 ImgFuncs.addTransparentPixel = function(imageData) {
-	var copy = new ImageData(imageData.width, imageData.height);
+	let copy = new ImageData(imageData.width, imageData.height);
 	copy.data.set(imageData.data);
 	ImgFuncs.addBufferToImageData(copy);
 	copy.data[3] = 250;
@@ -3296,7 +3299,7 @@ ImgFuncs.addTransparentPixel = function(imageData) {
 
 
 ImgFuncs.loadImage = function(url, callBack) {
-	var img = new Image();
+	let img = new Image();
 	img.onload = function() {
 		callBack(img);
 	}
@@ -3304,27 +3307,27 @@ ImgFuncs.loadImage = function(url, callBack) {
 }
 
 ImgFuncs.fromImage = function(img) {
-	var w = img.width;
-	var h = img.height;
-	var canvas = Artsy.createCanvas(w, h);
-	var ctx = canvas.getContext('2d');
+	let w = img.width;
+	let h = img.height;
+	let canvas = Artsy.createCanvas(w, h);
+	let ctx = canvas.getContext('2d');
 	ctx.drawImage(img, 0, 0);
-	var data = ctx.getImageData(0, 0, w, h);
+	let data = ctx.getImageData(0, 0, w, h);
 	return data;
 }
 
 ImgFuncs.fromDataURL = function(dataURL) {
-	var img = new Image();
+	let img = new Image();
 	img.src = dataURL;
 	return ImgFuncs.fromImage(img);
 }
 
 ImgFuncs.flipline = function(surface, x, y) {
-	var c = ImgFuncs_getColor32(surface, x, y);
-	var d = Math.sqrt((x - y) * (x - y) * 2);
-	var x1 = y - x;
-	var y1 = x - y;
-	var l = Math.sqrt(x1 * x1 + y1 * y1);
+	const c = ImgFuncs_getColor32(surface, x, y);
+	const d = Math.sqrt((x - y) * (x - y) * 2);
+	let x1 = y - x;
+	let y1 = x - y;
+	let l = Math.sqrt(x1 * x1 + y1 * y1);
 	if (l < 0.001) {
 		l = 0.001;
 	}
@@ -3337,7 +3340,7 @@ ImgFuncs.flipline = function(surface, x, y) {
 
 // Returns a copy of an image data object.
 ImgFuncs.copyData = function(imageData) {
-	var copy = new ImageData(imageData.width, imageData.height);
+	const copy = new ImageData(imageData.width, imageData.height);
 	copy.data.set(imageData.data);
 	ImgFuncs.addBufferToImageData(copy);
 	return copy;
@@ -3392,9 +3395,9 @@ ImgFuncs.InPlacePyramid = function(to, from, filter) {
 ImgFuncs.fontData = null;
 ImgFuncs.font = new Image()
 ImgFuncs.font.onload = function() {
-	var canvas = document.createElement('canvas');
-	var context = canvas.getContext('2d');
-	var img = ImgFuncs.font
+	let canvas = document.createElement('canvas');
+	let context = canvas.getContext('2d');
+	let img = ImgFuncs.font
 	canvas.width = img.width;
 	canvas.height = img.height;
 	context.drawImage(img, 0, 0);
@@ -3406,9 +3409,9 @@ ImgFuncs.font.src = "font8x8.png";
 ImgFuncs.boardData = null;
 ImgFuncs.board = new Image()
 ImgFuncs.board.onload = function() {
-	var canvas = document.createElement('canvas');
-	var context = canvas.getContext('2d');
-	var img = ImgFuncs.board
+	let canvas = document.createElement('canvas');
+	let context = canvas.getContext('2d');
+	let img = ImgFuncs.board
 	canvas.width = img.width;
 	canvas.height = img.height;
 	context.drawImage(img, 0, 0);
@@ -3455,10 +3458,10 @@ ImgFuncs.textify = function(imageData) {
 }
 
 ImgFuncs.similar = function(imgDat1, imgDat2) {
-	var total = 0;
-	var u81 = imgDat1.u8;
-	var u82 = imgDat2.u8;
-	var length = imgDat1.width * imgDat1.height * 4;
+	let total = 0;
+	let u81 = imgDat1.u8;
+	let u82 = imgDat2.u8;
+	let length = imgDat1.width * imgDat1.height * 4;
 	for (let i = 0; i < length; i += 4) {
 		// var a = u81[i] + u81[i + 1] + u81[i + 2];
 		// var b = u82[i] + u82[i + 1] + u82[i + 2];
