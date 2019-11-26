@@ -11,7 +11,7 @@ const fileList = [
 	'/OkayArtist/'
 ];
 
-const version = 'x3';
+const version = 'x4';
 
 self.addEventListener('install', function(event) {
 	event.waitUntil(
