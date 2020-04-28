@@ -255,8 +255,10 @@ Artsy.start = function() {
 	document.addEventListener("keyup", Input.keyUpHandler, false);
 	main.addEventListener("touchstart", Input.touchMoveHandler, false);
 	main.addEventListener("touchend", Input.touchMoveHandler, false);
+	main.addEventListener("touchend", Sounder.enableSounds, false);
 	main.addEventListener("touchmove", Input.touchMoveHandler, false);
 	main.addEventListener("mousedown", Input.mouseDownHandler, false);
+	main.addEventListener("mousedown", Sounder.enableSounds, false);
 	main.addEventListener("mouseup", Input.mouseUpHandler, false);
 	main.addEventListener("mousemove", Input.mouseMoveHandler, false);
 	window.addEventListener("gamepadconnected", Input.gamepadConnected, false);
@@ -548,6 +550,7 @@ var Input = {
 };
 
 Input.keyDownHandler = function(e) {
+	Sounder.enableSounds();
 	var keyCode = e.keyCode;
 
 	if (keyCode == 192) { // Tilde
@@ -1825,15 +1828,22 @@ Artsy.actions.SDL_SCANCODE_N = {
 	}
 }
 
-Artsy.actions.circle_thing = {
+Artsy.actions.SDL_SCANCODE_SPACE = {
 	name: "circle_thing",
 	affectsCanvas: true,
 	keycode: 32, // SPACE
 	emotion: new Emotion(32, 0, 0, 0, 0, 0),
 	action: function(state) {
-		var thisState = state;
 		Sounder.playSound("sfx_0");
+		return Artsy.actions.circle_thing.action(state);
+	}
+}
 
+Artsy.actions.circle_thing = {
+	name: "circle_thing",
+	affectsCanvas: true,
+	action: function(state) {
+		var thisState = state;
 		var brushes = Artsy.findAllBrushes();
 
 		for (let i = 0; i < brushes.length; ++i) {
@@ -2907,9 +2917,63 @@ Artsy.brushes.dark_lightning = {
 }
 
 var Sounder = {};
+Sounder.sounds = [];
+window.AudioContext = window.AudioContext || window.webkitAudioContext;
+Sounder.audioContext = new AudioContext();
+Sounder.lastSound = null;
+Sounder.soundsLoaded = 0;
+
+Sounder.enableSounds = function() {
+	// Load and play a blank sound to enable sound in safari
+	if (Sounder.soundsLoaded > 2) {
+		return;
+	}
+	Sounder.soundsLoaded += 1;
+	var source = Sounder.audioContext.createBufferSource();
+	source.connect(Sounder.audioContext.destination);
+	source.start(0);
+}
+
+Sounder.loadSound = function(soundName, callBack) {
+	if (Sounder.sounds[soundName]) {
+		callBack(Sounder.sounds[soundName]);
+		return;
+	}
+	var request = new XMLHttpRequest();
+	request.open('GET', "audio\\" + soundName + ".mp3", true);
+	request.responseType = 'arraybuffer';
+
+	let onError = function(error) {
+		console.log(error);
+	}
+
+	// Decode asynchronously
+	request.onload = function() {
+		Sounder.audioContext.decodeAudioData(request.response, function(buffer) {
+			Sounder.sounds[soundName] = buffer;
+			callBack(buffer);
+		}, onError);
+	}
+	request.send();
+}
 
 Sounder.playSound = function(soundName) {
-	// Todo: add sound support.
+	if (Artsy.state.fran) {
+		return false;
+	}
+	if (Sounder.lastSource) {
+		try { Sounder.lastSource.stop(); } catch (e) {}
+	}
+	Sounder.loadSound(soundName, buffer => {
+		var source = Sounder.audioContext.createBufferSource(); // creates a sound source
+		source.buffer = buffer;                    // tell the source which sound to play
+		source.connect(Sounder.audioContext.destination);       // connect the source to the context's destination (the speakers)
+		source.start(0);
+		if (Sounder.lastSource) {
+			try { Sounder.lastSource.stop(); } catch (e) {}
+		}
+		Sounder.lastSource = source;   
+	})
 }
 
 /* functions */
