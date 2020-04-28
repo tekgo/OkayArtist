@@ -2928,19 +2928,16 @@ function getByteOffset(x, y, width, height) {
 
 /* Image functions */
 
-var ImgFuncs = {}
+const ImgFuncs = {}
 
 ImgFuncs.littleEndian = ((new Uint32Array((new Uint8Array([1, 2, 3, 4])).buffer))[0] === 0x04030201)
 
 if (ImgFuncs.littleEndian == true) {
 	ImgFuncs.fixEndian = function(number) {
 		return ((number & 0xFF) << 24) // move byte 3 to byte 0
-			|
-			((number & 0xFF00) << 8) // move byte 1 to byte 2
-			|
-			((number >> 8) & 0xFF00) // move byte 2 to byte 1
-			|
-			((number >> 24) & 0xFF); // byte 0 to byte 3
+			| ((number & 0xFF00) << 8) // move byte 1 to byte 2
+			| ((number >> 8) & 0xFF00) // move byte 2 to byte 1
+			| ((number >> 24) & 0xFF); // byte 0 to byte 3
 	}
 } else {
 	ImgFuncs.fixEndian = function(number) {
@@ -2971,7 +2968,7 @@ ImgFuncs.setColor32 = function(imageData, x, y, color) {
 }
 
 ImgFuncs.addBufferToImageData = function(imageData) {
-	var u32 = imageData.u32;
+	let u32 = imageData.u32;
 	if (!u32) {
 		u32 = new Uint32Array(imageData.data.buffer);
 		imageData.u32 = u32;
@@ -2983,7 +2980,7 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 		}
 	}
 
-	var u8 = imageData.u8;
+	let u8 = imageData.u8;
 	if (!u8) {
 		u8 = new Uint8Array(imageData.data.buffer);
 		imageData.u8 = u8;
