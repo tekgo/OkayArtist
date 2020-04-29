@@ -2803,8 +2803,8 @@ Artsy.brushes.untitled = {
 	name: "untitled",
 	number: 8,
 	action: function(state) {
-		var x = state.brushPoint.x;
-		var y = state.brushPoint.y;
+		var x = (state.brushPoint.x) + state.width;
+		var y = (state.brushPoint.y) + state.height;
 		var s = 1 + state.brushSize;
 		var j = x;
 		var k = y;
@@ -2812,7 +2812,7 @@ Artsy.brushes.untitled = {
 		var c1 = ImgFuncs_getColor32(state.imageData, j, k);
 		for (let i = 0; i <= (s + 1) * (s + 1); ++i) {
 			j += j_s;
-			if (j >= x + s / 2 || j < x - s / 2) {
+			if ((j >= x + s / 2) || (j < x - s / 2)) {
 				j_s *= -1;
 				++k;
 				if (k >= y + s / 2) {
