@@ -18,7 +18,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	-	Import initial setup.
 	-	Improved message text.
 	?	Better keyboard.
-	?	Sound.
 */
 
 function Player(id, color) {
@@ -455,21 +454,28 @@ Artsy.update = function() {
 			message.push("Auto artist on");
 		}
 		if (message.length > 0 && Artsy.state.similar == null) {
-			var size = 15;
+			var size = 8;
 			var offset = (message.length - 1) * size / 2;
 			var maxWidth = 0
-			ctx.fillStyle = "rgba(0,0,0,0.75)";
+			ctx.fillStyle = "rgba(0,0,0,1.0)";
 			for (let i = 0; i < message.length; ++i) {
 				maxWidth = Math.max(message[i].length, maxWidth);
 			}
-			maxWidth *= size * 0.5;
-			ctx.fillRect(Artsy.state.imageData.width / 2 - maxWidth / 2, Artsy.state.imageData.height / 2 - offset - size, maxWidth, size * message.length + size * 0.5);
-			ctx.font = "12px monospace";
-			ctx.baseline = "middle";
-			ctx.textAlign = "center";
-			ctx.fillStyle = "white";
-			for (let i = 0; i < message.length; ++i) {
-				ctx.fillText(message[i], Artsy.state.imageData.width / 2, Artsy.state.imageData.height / 2 - offset + (i * size));
+			maxWidth *= size;
+			ctx.fillRect(Artsy.state.imageData.width / 2 - maxWidth / 2, Artsy.state.imageData.height / 2 - offset - size, maxWidth, size * message.length + size);
+			if (ImgFuncs.fontData) {
+				for (let i = 0; i < message.length; ++i) {
+					let line = message[i];
+					let y = Artsy.state.imageData.height / 2 + (i * size) - size;
+					for (let j = 0; j < line.length; j++) {
+						let x = Artsy.state.imageData.width / 2 - (line.length * size) / 2 + (j * size)
+						let char = line.charCodeAt(j);
+						let inx = char % 16;
+						let iny = Math.floor(char / 16);
+						// This is weird, you gotta offset the data from where it is in the source data...
+						ctx.putImageData(ImgFuncs.fontData, x - inx * 8, y - iny * 8, inx * 8, iny * 8, 8, 8);
+					}
+				}
 			}
 		}
 
