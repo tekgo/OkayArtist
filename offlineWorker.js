@@ -18,8 +18,6 @@ const fileList = [
 	'OkayArtist/audio/brush_7.mp3',
 	'OkayArtist/audio/brush_8.mp3',
 	'OkayArtist/audio/brush_9.mp3',
-	'OkayArtist/audio/devon-bg1.mp3',
-	'OkayArtist/audio/devon-stairwell.mp3',
 	'OkayArtist/audio/loop_0.mp3',
 	'OkayArtist/audio/magic1.mp3',
 	'OkayArtist/audio/numkey_0.mp3',
