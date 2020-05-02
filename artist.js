@@ -3776,7 +3776,11 @@ LevelFuncs.generateLevel = function(state) {
 			ImgFuncs_setColor32(surface, x, y, black);
 		}
 	}
-	let funcs = [(() => LevelFuncs.brogGenerator(surface, 1, 8, 0, color_make(0x77,0x44,0x44), color_make(0xee,0xaa,0xaa), color_make(0x00,0x00,0x00))),
+	let generators = [(() => LevelFuncs.brogGenerator2(surface, 100, 1, 10, color_make(0xff,0x20,0x55), color_make(0xff,0x99,0x99))),
+	(() => LevelFuncs.brogGenerator2(surface, 100, 3, 16, color_make(0x10,0x20,0x55), color_make(0xbb,0x88,0x00))),
+	(() => LevelFuncs.brogGenerator2(surface, 4, 128, 0, color_make(0xff,0xff,0xff), color_make(0x33,0x66,0x99))),
+	(() => LevelFuncs.brogGenerator2(surface, 100, 3, 8, color_make(0x33,0x99,0x99), color_make(0x00,0xff,0x00))),
+	(() => LevelFuncs.brogGenerator(surface, 1, 8, 0, color_make(0x77,0x44,0x44), color_make(0xee,0xaa,0xaa), color_make(0x00,0x00,0x00))),
 	(() => LevelFuncs.brogGenerator(surface, 100, 3, 8, color_make(0x22,0x99,0x77), color_make(0x66,0xcc,0x33), color_make(0xff,0x00,0x00))),
 	(() => LevelFuncs.brogGenerator(surface, 8, 8, 4, color_make(0x00,0x00,0x00), color_make(0x70,0x90,0xff), color_make(0x60,0x40,0x00))),
 	(() => LevelFuncs.brogGenerator(surface, 100, 4, 32, color_make(0xff,0xff,0xff), color_make(0x00,0xff,0xff), color_make(0xff,0x00,0xff))),
@@ -3786,8 +3790,8 @@ LevelFuncs.generateLevel = function(state) {
 	(() => LevelFuncs.brogGenerator(surface, 16, 1, 16, color_make(0xFF,0xFF,0xFF), color_make(0xBB,0x99,0x55), color_make(0x00,0x00,0x00))),
 	(() => LevelFuncs.brogGenerator(surface, 16, 128, 0, color_make(0x00,0x00,0x00), color_make(0x50,0x50,0x75), color_make(0xe0,0xe0,0xff)))
 	];
-	let idx = (Math.floor(Number.MAX_SAFE_INTEGER * Math.random())) % funcs.length;
-	funcs[idx]();
+	let idx = (Math.floor(Number.MAX_SAFE_INTEGER * Math.random())) % generators.length;
+	generators[idx]();
 	state.imageData = surface;
 	return state;
 }
@@ -3918,6 +3922,218 @@ currently the tiles are super simple but thats kind of cool too
 				for (k=0; k<SEG_W; ++k) {
 					for (l=0; l<SEG_W; ++l) {
 						ImgFuncs_setColor32(surface, i*SEG_W+k, j*SEG_W+l, colors[ tile_file[what_segment_to_use[i][j]-1][n][k][l] ]);
+					}
+				}
+			}
+		}
+	}
+}
+
+LevelFuncs.brogGenerator2 = function(surface, worms, worm_length, worm_start_dist, color1, color2) {
+
+	const SEG_W2 = 4;
+	const QUOT_W2 = (surface.width/SEG_W2);
+	const QUOT_W_MAX2 = (1024/SEG_W2);
+	const MAX_WORMS = 100;
+
+	let rand = function() {
+		return Math.floor(Number.MAX_SAFE_INTEGER * Math.random());
+	}
+
+	const dx_tab = [ +1, 0,-1, 0 ];
+	const dy_tab = [  0,+1, 0,-1 ];
+
+	// int i,j,k,l;
+	// int d;
+	// int what_segment_to_use[QUOT_W_MAX2][QUOT_W_MAX2];
+	// int wx[MAX_WORMS], wy[MAX_WORMS];
+	// int n;
+	// char c[2];
+	// size_t s;
+	// uint32_t colors[2] = {color1, color2};
+
+	var i,j,k,l;
+	var d;
+	var what_segment_to_use = [];
+	var wx = Array(worms).fill(0);
+	var wy = Array(worms).fill(0);
+	var n;
+	var c = 0;
+	var s = 0;
+	var colors = [color1, color2];
+	var tile_file = [];
+	
+	// f = fopen("resource/tiles2.txt", "r");
+	// if (!f) return;
+	// for (i=0; i<16; ++i)
+	// 	for (j=0; j<1; ++j)
+	// 	{
+	// 		for (k=0; k<4; ++k)
+	// 		{
+	// 			for (l=0; l<4; ++l)
+	// 			{
+	// 				s = fread(c, 1, 1, f);
+	// 				switch (c[0])
+	// 				{
+	// 				case '1':
+	// 					tile_file[i][j][k][l] = 1; break;
+	// 				default:
+	// 					tile_file[i][j][k][l] = 0; break;
+	// 				}
+	// 			}
+	// 			s = fread(c, 1, 1, f); //newline
+	// 		}
+	// 		s = fread(c, 1, 1, f); //newline
+	// 	}
+	// fclose(f);
+
+	for (i=0; i<16; ++i) {
+		tile_file[i] = [];
+		for (j=0; j<1; ++j)
+		{
+			tile_file[i][j] = [];
+			for (k=0; k<4; ++k)
+			{
+				tile_file[i][j][k] = [];
+				for (l=0; l<4; ++l)
+				{
+					c = LevelFuncs.tiles2.charAt(s);
+					s++;
+					switch (c)
+					{
+					case '1':
+						tile_file[i][j][k][l] = 1; break;
+					default:
+						tile_file[i][j][k][l] = 0; break;
+					}
+				}
+				// Newline
+				s++;
+			}
+			// Newline
+			s++;
+		}
+	}
+
+
+	// srand(time(0));
+	// memset(what_segment_to_use, 0, sizeof(int)*QUOT_W2*QUOT_W2);
+	for (i = 0; i < QUOT_W2; i++) {
+		what_segment_to_use.push(new Array(QUOT_W2).fill(0));
+	}
+	
+	// //just shove some stuff in randomly, later this will grow outward from a point
+	
+	// //grow out some sections of wall
+	// wx[0] = QUOT_W2/2;
+	// wy[0] = QUOT_W2/2;
+	// for (i=1; i<worms; ++i)
+	// {
+	// 	wx[i] = wx[0]-worm_start_dist+rand()%(2*worm_start_dist+1);
+	// 	wy[i] = wy[0]-worm_start_dist+rand()%(2*worm_start_dist+1);
+	// 	if (wx[i]<0) wx[i] = 0;
+	// 	if (wy[i]<0) wx[i] = 0;
+	// 	if (wx[i]>=QUOT_W2) wx[i] = QUOT_W2-1;
+	// 	if (wy[i]>=QUOT_W2) wy[i] = QUOT_W2-1;
+	// }
+	// what_segment_to_use[QUOT_W2/2][QUOT_W2/2] = 1;
+	// for (j=0; j<worm_length; ++j)
+	// 	for (i=0; i<worms; ++i)
+	// 	{
+	// 		d = rand()%4;
+	// 		wx[i] += dx_tab[d];
+	// 		wy[i] += dy_tab[d];
+	// 		if (wx[i]<0) wx[i] = 0;
+	// 		if (wy[i]<0) wy[i] = 0;
+	// 		if (wx[i]>=QUOT_W2) wx[i] = QUOT_W2-1;
+	// 		if (wy[i]>=QUOT_W2) wy[i] = QUOT_W2-1;
+	// 		what_segment_to_use[wx[i]][wy[i]] = 1;
+	// 	}
+
+	wx[0] = QUOT_W2/2;
+	wy[0] = QUOT_W2/2;
+	for (i=1; i<worms; ++i)
+	{
+		wx[i] = wx[0]-worm_start_dist+rand()%(2*worm_start_dist+1);
+		wy[i] = wy[0]-worm_start_dist+rand()%(2*worm_start_dist+1);
+		if (wx[i]<0) wx[i] = 0;
+		if (wy[i]<0) wx[i] = 0;
+		if (wx[i]>=QUOT_W2) wx[i] = QUOT_W2-1;
+		if (wy[i]>=QUOT_W2) wy[i] = QUOT_W2-1;
+	}
+	what_segment_to_use[QUOT_W2/2][QUOT_W2/2] = 1;
+	for (j=0; j<worm_length; ++j) {
+		for (i=0; i<worms; ++i)
+		{
+			d = rand()%4;
+			wx[i] += dx_tab[d];
+			wy[i] += dy_tab[d];
+			if (wx[i]<0) wx[i] = 0;
+			if (wy[i]<0) wy[i] = 0;
+			if (wx[i]>=QUOT_W2) wx[i] = QUOT_W2-1;
+			if (wy[i]>=QUOT_W2) wy[i] = QUOT_W2-1;
+			what_segment_to_use[wx[i]][wy[i]] = 1;
+		}
+	}
+		
+	// //figure out which segments to use based on adjacency
+	// for (i=0; i<QUOT_W2; ++i)
+	// 	for (j=0; j<QUOT_W2; ++j)
+	// 	{
+	// 		if (what_segment_to_use[i][j]==0) continue;
+	// 		n = 0;
+	// 		if (i>0 && what_segment_to_use[i-1][j]>0)
+	// 			n |= 2;
+	// 		if (j>0 && what_segment_to_use[i][j-1]>0)
+	// 			n |= 1;
+	// 		if (i<QUOT_W2-1 && what_segment_to_use[i+1][j]>0)
+	// 			n |= 8;
+	// 		if (j<QUOT_W2-1 && what_segment_to_use[i][j+1]>0)
+	// 			n |= 4;
+	// 		what_segment_to_use[i][j] = 1+n;
+	// 	}
+	
+	// //fill in the level according to the segments we've chosen
+	// for (i=0; i<QUOT_W2; ++i)
+	// 	for (j=0; j<QUOT_W2; ++j)
+	// 	{
+	// 		if (what_segment_to_use[i][j]>0) //skip it if it's empty, don't overwrite other generation
+	// 		{
+				
+	// 		for (k=0; k<SEG_W2; ++k)
+	// 			for (l=0; l<SEG_W2; ++l)
+	// 				set_color(surface, i*SEG_W2+k, j*SEG_W2+l, colors[ tile_file[what_segment_to_use[i][j]-1][0][k][l] ]);
+	// 				//level_segment[what_segment_to_use[i][j]-1][k][l];
+	// 		}
+	// 	}
+	
+	//figure out which segments to use based on adjacency
+	for (i=0; i<QUOT_W2; ++i) {
+		for (j=0; j<QUOT_W2; ++j)
+		{
+			if (what_segment_to_use[i][j]==0) continue;
+			n = 0;
+			if (i>0 && what_segment_to_use[i-1][j]>0)
+				n |= 2;
+			if (j>0 && what_segment_to_use[i][j-1]>0)
+				n |= 1;
+			if (i<QUOT_W2-1 && what_segment_to_use[i+1][j]>0)
+				n |= 8;
+			if (j<QUOT_W2-1 && what_segment_to_use[i][j+1]>0)
+				n |= 4;
+			what_segment_to_use[i][j] = 1+n;
+		}
+	}
+	
+	//fill in the level according to the segments we've chosen
+	for (i=0; i<QUOT_W2; ++i) {
+		for (j=0; j<QUOT_W2; ++j)
+		{
+			if (what_segment_to_use[i][j]>0) //skip it if it's empty, don't overwrite other generation
+			{
+				for (k=0; k<SEG_W2; ++k) {
+					for (l=0; l<SEG_W2; ++l) {
+						ImgFuncs_setColor32(surface, i*SEG_W2+k, j*SEG_W2+l, colors[ tile_file[what_segment_to_use[i][j]-1][0][k][l] ]);
 					}
 				}
 			}
