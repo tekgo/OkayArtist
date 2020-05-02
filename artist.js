@@ -567,11 +567,13 @@ Input.keyDownHandler = function(e) {
 		Artsy.state.fran = !Artsy.state.fran;
 		Artsy.state.mouseDown = false
 		Artsy.state.touches = [];
+		Artsy.state.canvasNeedsUpdate = true;
 	} else {
 		if (Artsy.state.fran) {
 			Artsy.state.fran = false;
 			Players.autoArtist.pressStates = {};
 			Players.autoArtist.keyStates = {};
+			Artsy.state.canvasNeedsUpdate = true;
 		}
 		if (!Players.keyboard.keyStates[keyCode]) {
 			Players.keyboard.pressStates[keyCode] = true;
