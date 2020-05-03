@@ -563,7 +563,7 @@ Input.keyDownHandler = function(e) {
 	Sounder.enableSounds();
 	var keyCode = e.keyCode;
 
-	if (keyCode == 192) { // Tilde
+	if (keyCode == 192 && false) { // Tilde
 		Input.mouseCancel();
 		Players.keyboard.pressStates = {};
 		Players.keyboard.keyStates = {};
@@ -2088,6 +2088,21 @@ Artsy.actions.Reset = {
 	name: "Menu",
 	affectsCanvas: false,
 	pressCode: 27, // 'esc'
+	action: function(state) {
+		state = LevelFuncs.generateLevel(state);
+		state.keyStates = {};
+		state.pressStates = {};
+		state.mouseDown = {};
+		state.touches = [];
+		Input.mouseCancel();
+		return state;
+	}
+}
+
+Artsy.actions.Tilde = {
+	name: "Menu",
+	affectsCanvas: false,
+	pressCode: 192, // 'esc'
 	action: function(state) {
 		state = LevelFuncs.generateLevel(state);
 		state.keyStates = {};
