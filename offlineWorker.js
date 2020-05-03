@@ -47,7 +47,7 @@ const fileList = [
 	'OkayArtist/audio/time_up.mp3'
 ];
 
-const version = 'x5';
+const version = 'x6';
 
 self.addEventListener('install', function(event) {
 	event.waitUntil(
