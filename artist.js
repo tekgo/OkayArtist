@@ -261,8 +261,8 @@ Artsy.start = function() {
 	main.addEventListener("mousedown", Sounder.enableSounds, false);
 	main.addEventListener("mouseup", Input.mouseUpHandler, false);
 	main.addEventListener("mousemove", Input.mouseMoveHandler, false);
-	window.addEventListener("gamepadconnected", Input.gamepadConnected, false);
-	window.addEventListener("gamepaddisconnected", Input.gamepadDisconnected, false);
+	// window.addEventListener("gamepadconnected", Input.gamepadConnected, false);
+	// window.addEventListener("gamepaddisconnected", Input.gamepadDisconnected, false);
 
 	Artsy.allActions = Artsy.findAllActions();
 	Artsy.update();
@@ -283,7 +283,7 @@ Artsy.start = function() {
 		Artsy.readfiles(e.dataTransfer.files, true, Artsy.state);
 	}
 
-	Input.requestMIDIAccess();
+	// Input.requestMIDIAccess();
 
 };
 
@@ -936,9 +936,9 @@ Input.updateInputs = function() {
 
 	var changed = false;
 
-	changed = changed | Input.updateGamepads();
+	// changed = changed | Input.updateGamepads();
 
-	changed = changed | Input.updateMIDI();
+	// changed = changed | Input.updateMIDI();
 
 	if (changed == true) {
 		Artsy.state.haskeyed = true;
