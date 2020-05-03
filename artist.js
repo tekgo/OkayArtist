@@ -456,18 +456,18 @@ Artsy.update = function() {
 		}
 		if (message.length > 0 && Artsy.state.similar == null) {
 			var size = 8;
-			var offset = (message.length - 1) * size / 2;
+			var offset = (message.length - 1) * (1 + size / 2);
 			var maxWidth = 0
 			ctx.fillStyle = "rgba(0,0,0,1.0)";
 			for (let i = 0; i < message.length; ++i) {
 				maxWidth = Math.max(message[i].length, maxWidth);
 			}
 			maxWidth *= size;
-			ctx.fillRect(Artsy.state.imageData.width / 2 - maxWidth / 2, Artsy.state.imageData.height / 2 - offset - size, maxWidth, size * message.length + size);
+			ctx.fillRect(Artsy.state.imageData.width / 2 - maxWidth / 2, Artsy.state.imageData.height / 2 - size - offset, maxWidth, (size + 2) * message.length + size);
 			if (ImgFuncs.fontData) {
 				for (let i = 0; i < message.length; ++i) {
 					let line = message[i];
-					let y = Artsy.state.imageData.height / 2 + (i * size) - size;
+					let y = Artsy.state.imageData.height / 2 + (i * size) - size + size / 2 - offset + i * 2;
 					for (let j = 0; j < line.length; j++) {
 						let x = Artsy.state.imageData.width / 2 - (line.length * size) / 2 + (j * size)
 						let char = line.charCodeAt(j);
