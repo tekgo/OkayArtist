@@ -1169,9 +1169,9 @@ Gallery.displayGallery = function(force = false) {
 	if (("standalone" in window.navigator) && window.navigator.standalone) {
 		native = true;
 	}
-	var imgTags = new Array();
+	var imgTags = new Array(images.length).fill(0);
 	for (let i = 0; i < images.length; ++i) {
-		var j = i;
+		let j = i;
 		ImgFuncs.loadImage(images[i], function(img) {
 			var url = img.src;
 			let extension = ".gif"
@@ -1183,29 +1183,30 @@ Gallery.displayGallery = function(force = false) {
 			var imgTag = document.createElement("img")
 			imgTag.src = url;
 			imgTag.setAttribute("download", "img" + extension);
+			let tag = imgTag;
 			if (native) {
 				// On native iOS the img callout doesn't work so make it a link
 				var linkTag = document.createElement("a");
 				linkTag.setAttribute("href", url);
 				linkTag.appendChild(imgTag);
 				linkTag.setAttribute("download", "img" + extension);
-				newGallery.appendChild(linkTag);
-				imgTags.push(linkTag);
-			} else {
-				newGallery.appendChild(imgTag);
-				imgTags.push(imgTag);
+				tag = linkTag;
 			}
 
-			if (imgTags.length == images.length) {
+			imgTags[j] = tag;
+			newGallery.appendChild(tag);
+
+			if (newGallery.childElementCount == images.length + 1) {
 				while (newGallery.firstChild) {
 					newGallery.removeChild(newGallery.firstChild);
 				}
 				newGallery.appendChild(close);
 				for (let i = 0; i < imgTags.length; i++) {
-					newGallery.appendChild(imgTags[i]);
+					if (imgTags[i] != 0) {
+						newGallery.appendChild(imgTags[i]);
+					}
 				}
 			}
-
 		});
 	}
 	document.body.appendChild(newGallery);
