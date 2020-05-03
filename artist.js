@@ -3080,7 +3080,8 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 		}
 		else {
 			imageData.byteOffset = function(x, y) {
-				return ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
+				let i = ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
+				return i;
 			}
 		}
 	}
@@ -3770,15 +3771,112 @@ LevelFuncs.generateLevel = function(state) {
 		(0xff));
 	}
 
+	let rand = function() {
+		return Math.floor(Number.MAX_SAFE_INTEGER * Math.random());
+	}
+
+	let randInt = function(start,end) {
+		let len = Math.abs(end - start);
+		return start + (rand() % len);
+	}
+
+	let black = color_make(0,0,0);
+	let white = color_make(255,255,255);
+
+	let trueRandom = function() { return color_make(randInt(0, 255), randInt(0, 255), randInt(0, 255)); }
+	let bitRandom = function() { return Math.random()>0.5 ? black : white;  }
+	let trueBitRandom = function() { return color_make(Math.random()>0.5 ? 0 : 255, Math.random()>0.5 ? 0 : 255, Math.random()>0.5 ? 0 : 255) }
+
+	let cset = function(newboard, fx,fy, nx, ny, channel, color) {
+		var dx = (fx - 1) * 3 + (nx - 1);
+		var dy = (fy - 1) * 3 + (ny - 1);
+		var ch = ImgFuncs_getColorArr(newboard, dx, dy)
+		ch[~~channel % 3] = ~~color;
+		ImgFuncs_setColorArr(newboard, dx, dy, ch);
+	}
+
+	function thresh_cset(board, fx,fy, nx, ny, channel, color) {
+		color > this.thresh ? color = 255 : color = 0;
+		cset(board,fx,fy,nx,ny,channel,color);
+	}
+	function thresh2_cset(board, fx,fy, nx, ny, channel, color) {
+		if (color < this.thresh) { color = 0; }
+		if (color > this.thresh2) { color = 255; }
+		cset(board,fx,fy,nx,ny,channel,color);
+	}
+	function anti_cget(x, xd, y, yd, channel) {
+		let nx = x;
+		let ny = y
+		if (xd != 0) { nx = this.size - (x+xd) + 1; }
+		if (yd != 0) { ny = this.size - (y+xd) + 1; }
+		nx = Math.max(Math.min(this.size, nx), 1);
+		ny = Math.max(Math.min(this.size, ny), 1);
+		return ImgFuncs_getColorArr(this.state, nx-1, ny-1)[channel];
+	}
+
+	let bw_random_override = function(x,y,c) {
+		if (y != this.lasty) { // -- Much magic knowledge about loop here
+			if (Math.random()>0.5) {
+				this.yes = 0xFF;
+				this.no = 0x00;
+			}
+			else {
+				this.yes = 0x00;
+				this.no = 0xFF;
+			}
+			this.lasty = y;
+		}
+		return this.yes || this.no;
+	}
+
 	var surface = new ImageData(state.width, state.height);
 	ImgFuncs.addBufferToImageData(surface);
-	let black = color_make(0,0,0);
 	for (let x = 0; x<state.width; x++) {
 		for (let y = 0; y<state.width; y++) {
 			ImgFuncs_setColor32(surface, x, y, black);
 		}
 	}
-	let generators = [(() => LevelFuncs.brogGenerator2(surface, 100, 1, 10, color_make(0xff,0x20,0x55), color_make(0xff,0x99,0x99))),
+	let generators = [
+	(() => LevelFuncs.pyramidGenerator(surface, {})),
+	(() => LevelFuncs.pyramidGenerator(surface, {random: trueRandom})),
+	(() => LevelFuncs.pyramidGenerator(surface, {random: trueBitRandom})),
+// 	PyramidGenerator({mutate_tab=function(self,i,tabcount) return rotate(i,math.random(0,3)*2, 2,tabcount-1) end}),
+	(() => LevelFuncs.pyramidGenerator(surface, {mutate_tab: function(i, tabcount, channel) { return this.rotate(i, randInt(0,3) * 2, 2,tabcount-2) }})),
+// 	PyramidGenerator({mutate_tab=function(self,i,tabcount,channel) return rotate(i,channel+1, 2,tabcount-1) end}),
+	(() => LevelFuncs.pyramidGenerator(surface, {mutate_tab: function(i, tabcount, channel) { return this.rotate(i,channel+1, 2,tabcount - 2) }})),
+	// PyramidGenerator({centerget=truerandom}),
+	(() => LevelFuncs.pyramidGenerator(surface, {centerget: trueRandom})),
+// 	PyramidGenerator({centerget=truerandom,random=truerandom}),
+	(() => LevelFuncs.pyramidGenerator(surface, {centerget: trueRandom, random: trueRandom})),
+// 	PyramidGenerator({centerget=bw_random_override}),
+	(() => LevelFuncs.pyramidGenerator(surface, {centerget: bw_random_override})),
+// 	PyramidGenerator({centerget=bw_random_override, random=truerandom}),
+	(() => LevelFuncs.pyramidGenerator(surface, {centerget: bw_random_override, random: trueRandom})),
+	
+// 	-- STICKETS?! (24)
+	// PyramidGenerator({thresh=255/2, cset=thresh_cset, random=truebitrandom}),
+	(() => LevelFuncs.pyramidGenerator(surface, {thresh:255/2, cset:thresh_cset, random: trueBitRandom})),
+// 	PyramidGenerator({thresh=255/2, cset=thresh_cset, random=truerandom}),
+	(() => LevelFuncs.pyramidGenerator(surface, {thresh:255/2, cset:thresh_cset, random: trueRandom})),
+	
+// 	-- Girder city (27)
+// 	PyramidGenerator({thresh=255/2, cset=thresh_cset, random=truerandom, cget=anti_cget}),
+	(() => LevelFuncs.pyramidGenerator(surface, {thresh:255/2, cset:thresh_cset, random: trueRandom, cget:anti_cget})),
+// --	PyramidGenerator({thresh=255/2, cset=thresh_cset, cget=anti_cget}), -- BW above
+		
+// 	-- Calmgirder (29)
+// 	PyramidGenerator({thresh=255*1/3, thresh2=255*2/3, cset=thresh2_cset, random=truebitrandom, cget=anti_cget}),
+	(() => LevelFuncs.pyramidGenerator(surface, {thresh:255/3, thresh2:255 * 2/3, cset:thresh2_cset, random: trueBitRandom, cget:anti_cget})),
+	(() => LevelFuncs.pyramidGenerator(surface, {thresh:255/3, cset:thresh_cset, random: trueRandom, cget:anti_cget})),
+	// PyramidGenerator({thresh=255*1/3, thresh2=255*2/3, cset=thresh2_cset, random=bitrandom, cget=anti_cget}),
+	(() => LevelFuncs.pyramidGenerator(surface, {thresh:255/3, thresh2:255 * 2/3, cset:thresh2_cset, random: bitRandom, cget:anti_cget})),
+	
+// 	-- Purr (31)
+// 	PyramidGenerator({thresh=255*2/5, thresh2=255*3/5, cset=thresh2_cset, random=bitrandom}),
+	(() => LevelFuncs.pyramidGenerator(surface, {thresh:255*2/5, thresh2:255 * 3/5, cset:thresh2_cset, random: bitRandom})),
+	(() => LevelFuncs.pyramidGenerator(surface, {thresh:255*2/5, thresh2:255 * 3/5, cset:thresh2_cset, random: trueBitRandom})),
+// 	PyramidGenerator({thresh=255*2/5, thresh2=255*3/5, cset=thresh2_cset, random=truebitrandom}),
+	(() => LevelFuncs.brogGenerator2(surface, 100, 1, 10, color_make(0xff,0x20,0x55), color_make(0xff,0x99,0x99))),
 	(() => LevelFuncs.brogGenerator2(surface, 100, 3, 16, color_make(0x10,0x20,0x55), color_make(0xbb,0x88,0x00))),
 	(() => LevelFuncs.brogGenerator2(surface, 4, 128, 0, color_make(0xff,0xff,0xff), color_make(0x33,0x66,0x99))),
 	(() => LevelFuncs.brogGenerator2(surface, 100, 3, 8, color_make(0x33,0x99,0x99), color_make(0x00,0xff,0x00))),
@@ -4141,6 +4239,157 @@ LevelFuncs.brogGenerator2 = function(surface, worms, worm_length, worm_start_dis
 			}
 		}
 	}
+}
+
+LevelFuncs.pyramidGenerator = function(surface, options) {
+	let greyMake = function(v) {
+		return (((v & 0xff) << 24) |
+		((v & 0xff) << 16) |
+		((v & 0xff) << 8) |
+		(0xff));
+	}
+
+	let color_make = function(r,g,b) {
+		return (((r & 0xff) << 24) |
+		((g & 0xff) << 16) |
+		((b & 0xff) << 8) |
+		(0xff));
+	}
+
+	this.cget = function(x, xd, y, yd, channel) {
+		let nx = x + xd
+		let ny = y + yd
+		nx = Math.max(Math.min(this.size, nx), 1);
+		ny = Math.max(Math.min(this.size, ny), 1);
+		return ImgFuncs_getColorArr(this.state, nx-1, ny-1)[channel];
+	}
+
+	this.cset = function(newboard, fx,fy, nx, ny, channel, color) {
+		var dx = (fx - 1) * 3 + (nx - 1);
+		var dy = (fy - 1) * 3 + (ny - 1);
+		var ch = ImgFuncs_getColorArr(newboard, dx, dy)
+		ch[~~channel % 3] = ~~color;
+		ImgFuncs_setColorArr(newboard, dx, dy, ch);
+	}
+
+	this.rotate = function(n, by, base, mod) {
+		if (n >= base) {
+			return (n-base + by)%mod + base;
+		}
+		return n;
+	}
+
+	this.centerget = function(x,y,channel) {
+		return this.cget(x,1,y,1,channel);
+	}
+
+	this.mutate_tab = function(i,tabcount) {
+		return i
+	}
+
+	this.random = (() => greyMake(Math.floor(Number.MAX_SAFE_INTEGER * Math.random()) % 255));
+
+	this.mapMake = function(w,h) {
+		var map = new ImageData(w, h);
+		let black = color_make(0,0,0);
+		ImgFuncs.addBufferToImageData(map);
+		for (let x = 0; x<w; x++) {
+			for (let y = 0; y<h; y++) {
+				ImgFuncs_setColor32(map, x, y, black);
+			}
+		}
+		return map;
+	}
+
+	this.mapRandom = function(w,h, f) {
+		var map = new ImageData(w, h);
+		ImgFuncs.addBufferToImageData(map);
+		for (let x = 0; x<w; x++) {
+			for (let y = 0; y<h; y++) {
+				ImgFuncs_setColor32(map, x, y, f());
+			}
+		}
+		return map;
+	}
+
+	this.copy = function(to, from) {
+		for (let x = 0; x<to.width; x++) {
+			for (let y = 0; y<to.height; y++) {
+				ImgFuncs_setColor32(to, x, y, ImgFuncs_getColor32(from, x, y));
+			}
+		}
+	}
+
+	this.mapCenterCrop = function(map, w, h) {
+		if (map.width == w && map.height == h) {
+			return map;
+		}
+		let result = this.mapMake(w , h);
+
+		let offsetX = Math.floor((map.width - w) / 2);
+		let offsetY = Math.floor((map.height - h) / 2);
+
+		for (let x = 0; x<w; x++) {
+			for (let y = 0; y<h; y++) {
+				ImgFuncs_setColor32(result, x, y, ImgFuncs_getColor32(map, x + offsetX, y + offsetY));
+			}
+		}
+		return result
+	}
+
+	this.initial = function() {
+		this.size = 3;
+		return this.mapRandom(this.size, this.size, this.random);
+	}
+
+	this.pass = function(w,h) {
+		let newsize = this.size * 3
+		let newboard = this.mapMake(newsize, newsize)
+		
+		for(let x=1; x <= this.size; x++) {
+			for(let y=1; y<= this.size; y++)  {
+				for(let c=0; c <= 2; c++) { // c for channel
+					let get =   this.cget(x, 0,  y, 0,  c);
+					let left =  this.cget(x, -1, y, 0,  c);
+					let right = this.cget(x, 1,  y, 0,  c);
+					let up =    this.cget(x, 0,  y, -1, c);
+					let down =  this.cget(x, 0,  y, 1,  c);
+					
+					let newup = (up + get)/2;
+					let newdown = (down + get)/2;
+					let newleft = (left + get)/2;
+					let newright = (right + get)/2;
+					
+					let tab = [this.centerget(x,y,c), newleft, newright, newup, newdown, (newup+newleft)/2, (newdown+newleft)/2, (newup+newright)/2, (newdown+newright)/2];
+					let coord = [[2,2], [1,2], [3, 2], [2, 1], [2,3], [1,1], [1,3], [3, 1], [3,3]];
+					
+					let tabcount = tab.length;
+					for(let i=0; i < tabcount; i++) {
+						let tt = ~~tab[ this.mutate_tab(i, tabcount, c) ];
+						let tc = coord[ i ];
+						this.cset(newboard, x, y, tc[0], tc[1], c, tt);
+					}
+				}
+			}
+		}
+		
+		this.state = newboard
+		this.size = newsize
+		
+		if (this.size >= w && this.size >= h) {
+			return this.mapCenterCrop(this.state, w, h);
+		}
+		return null;
+	}
+
+	Object.assign(this, options);
+
+	let result = null
+	this.state = this.initial()
+	while (!result) {
+		result = this.pass(surface.width,surface.height);
+	}
+	return this.copy(surface, result);
 }
 
 LevelFuncs.tiles = `0555555555555555
