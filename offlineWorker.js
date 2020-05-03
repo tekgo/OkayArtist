@@ -3,8 +3,6 @@ const fileList = [
 	'/OkayArtist/board.png',
 	'/OkayArtist/board.pxi',
 	'/OkayArtist/font8x8.png',
-	'/OkayArtist/gif.js',
-	'/OkayArtist/gif.worker.js',
 	'/OkayArtist/imageDisplay.html',
 	'/OkayArtist/index.html',
 	'/OkayArtist/offlineSupport.js',

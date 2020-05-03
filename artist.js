@@ -226,25 +226,6 @@ Artsy.createState = function(options = {}) {
 
 Artsy.state = Artsy.createState({});
 
-Artsy.history = [];
-Artsy.historyTicks = 0;
-Artsy.tickHistory = 1;
-Artsy.maxHistory = 50;
-Artsy.addToHistory = function(imageData) {
-	if (Artsy.history.length >= Artsy.maxHistory) {
-		var newHistory = [];
-		for (let i = 1; i < Artsy.history.length; i += 2) {
-			newHistory.push(Artsy.history[i]);
-		}
-		Artsy.tickHistory *= 2;
-		Artsy.history = newHistory;
-	}
-	if ((Artsy.historyTicks % Artsy.tickHistory) == 0) {
-		Artsy.history.push(imageData);
-	}
-	Artsy.historyTicks++;
-}
-
 /* Lifecycle functions */
 
 // Setup.
@@ -525,7 +506,6 @@ Artsy.update = function() {
 		}
 
 		Artsy.state.newLockedRegions = [];
-		Artsy.addToHistory(ImgFuncs.copyData(Artsy.state.imageData));
 	}
 
 	// Color the keys yellow if a key is being pressed.
@@ -1153,29 +1133,8 @@ Input.updateMIDI = function() {
 /* Save/load images */
 
 var Gallery = {
-	images: null,
-	giffer: null
+	images: null
 };
-
-Gallery.saveImageGroup = function(images) {
-	var gif = new GIF({
-		workers: 2,
-		quality: 30
-	});
-	Gallery.giffer = gif;
-
-	for (let i = 0; i < images.length; i++) {
-		gif.addFrame(images[i]);
-	}
-
-	gif.on('finished', function(blob) {
-		Gallery.blobToDataURL(blob, function(url) {
-			Gallery.saveImageURL(url);
-			Gallery.displayGallery(true);
-		});
-	});
-	gif.render();
-}
 
 Gallery.blobToDataURL = function(blob, callback) {
 	var a = new FileReader();
@@ -2180,9 +2139,6 @@ Artsy.actions.SDL_SCANCODE_RETURN = {
 	pressCode: 13, // 
 	action: function(state) {
 		Gallery.saveImageData(state.imageData);
-		var imageGroup = Artsy.history.slice();
-		imageGroup.push(state.imageData);
-		Gallery.saveImageGroup(imageGroup);
 		Sounder.playSound("sfx_1");
 		Input.mouseCancel();
 		return Artsy.actions.Gallery.action(state);
