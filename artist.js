@@ -1157,9 +1157,6 @@ Gallery.displayGallery = function(force = false) {
 		}
 	}
 	var images = Gallery.getSavedImages();
-	if (images.length <= 0) {
-		return;
-	}
 
 	var newGallery = document.createElement("div");
 	newGallery.id = "gallery";
