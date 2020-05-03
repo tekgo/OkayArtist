@@ -3788,8 +3788,8 @@ LevelFuncs.generateLevel = function(state) {
 	let trueBitRandom = function() { return color_make(Math.random()>0.5 ? 0 : 255, Math.random()>0.5 ? 0 : 255, Math.random()>0.5 ? 0 : 255) }
 
 	let cset = function(newboard, fx,fy, nx, ny, channel, color) {
-		var dx = (fx - 1) * 3 + (nx - 1);
-		var dy = (fy - 1) * 3 + (ny - 1);
+		var dx = (fx) * 3 + (nx);
+		var dy = (fy) * 3 + (ny);
 		var ch = ImgFuncs_getColorArr(newboard, dx, dy)
 		ch[~~channel % 3] = ~~color;
 		ImgFuncs_setColorArr(newboard, dx, dy, ch);
@@ -4259,14 +4259,14 @@ LevelFuncs.pyramidGenerator = function(surface, options) {
 	this.cget = function(x, xd, y, yd, channel) {
 		let nx = x + xd
 		let ny = y + yd
-		nx = Math.max(Math.min(this.size, nx), 1);
-		ny = Math.max(Math.min(this.size, ny), 1);
-		return ImgFuncs_getColorArr(this.state, nx-1, ny-1)[channel];
+		nx = Math.max(Math.min(this.size, nx), 0);
+		ny = Math.max(Math.min(this.size, ny), 0);
+		return ImgFuncs_getColorArr(this.state, nx, ny)[channel];
 	}
 
 	this.cset = function(newboard, fx,fy, nx, ny, channel, color) {
-		var dx = (fx - 1) * 3 + (nx - 1);
-		var dy = (fy - 1) * 3 + (ny - 1);
+		var dx = (fx) * 3 + (nx);
+		var dy = (fy) * 3 + (ny);
 		var ch = ImgFuncs_getColorArr(newboard, dx, dy)
 		ch[~~channel % 3] = ~~color;
 		ImgFuncs_setColorArr(newboard, dx, dy, ch);
@@ -4280,7 +4280,7 @@ LevelFuncs.pyramidGenerator = function(surface, options) {
 	}
 
 	this.centerget = function(x,y,channel) {
-		return this.cget(x,1,y,1,channel);
+		return this.cget(x,0,y,0,channel);
 	}
 
 	this.mutate_tab = function(i,tabcount) {
@@ -4346,9 +4346,9 @@ LevelFuncs.pyramidGenerator = function(surface, options) {
 		let newsize = this.size * 3
 		let newboard = this.mapMake(newsize, newsize)
 		
-		for(let x=1; x <= this.size; x++) {
-			for(let y=1; y<= this.size; y++)  {
-				for(let c=0; c <= 2; c++) { // c for channel
+		for(let x=0; x < this.size; x++) {
+			for(let y=0; y< this.size; y++)  {
+				for(let c=0; c < 3; c++) { // c for channel
 					let get =   this.cget(x, 0,  y, 0,  c);
 					let left =  this.cget(x, -1, y, 0,  c);
 					let right = this.cget(x, 1,  y, 0,  c);
@@ -4367,7 +4367,7 @@ LevelFuncs.pyramidGenerator = function(surface, options) {
 					for(let i=0; i < tabcount; i++) {
 						let tt = ~~tab[ this.mutate_tab(i, tabcount, c) ];
 						let tc = coord[ i ];
-						this.cset(newboard, x, y, tc[0], tc[1], c, tt);
+						this.cset(newboard, x, y, tc[0] - 1, tc[1] - 1, c, tt);
 					}
 				}
 			}
