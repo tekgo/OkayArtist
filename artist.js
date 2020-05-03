@@ -1174,21 +1174,21 @@ Gallery.displayGallery = function(force = false) {
 		var j = i;
 		ImgFuncs.loadImage(images[i], function(img) {
 			var url = img.src;
+			let extension = ".gif"
 			if (img.src.indexOf("image/gif") == -1) {
 				var data = ImgFuncs.fromImage(img);
+				extension = ".png"
 				url = ImgFuncs.toDataURL(ImgFuncs.addTransparentPixel(ImgFuncs.scaleImageData(data, 4)));
 			}
 			var imgTag = document.createElement("img")
 			imgTag.src = url;
-			imgTag.setAttribute("download", "img.png");
+			imgTag.setAttribute("download", "img" + extension);
 			if (native) {
-				// On native iOS the img callout doesn't work, so link to the image elsewhere.
+				// On native iOS the img callout doesn't work so make it a link
 				var linkTag = document.createElement("a");
-				linkTag.setAttribute("href", "http://superpartyawesome.com/things/imageDisplay/#" + url);
+				linkTag.setAttribute("href", url);
 				linkTag.appendChild(imgTag);
-				linkTag.setAttribute("target", "_blank");
-				linkTag.setAttribute("rel", "external");
-				linkTag.setAttribute("download", "img.png");
+				linkTag.setAttribute("download", "img" + extension);
 				newGallery.appendChild(linkTag);
 				imgTags.push(linkTag);
 			} else {
