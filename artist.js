@@ -2080,12 +2080,12 @@ Artsy.actions.Gallery = {
 	}
 }
 
-Artsy.actions.Menu = {
+Artsy.actions.Reset = {
 	name: "Menu",
 	affectsCanvas: false,
 	pressCode: 27, // 'esc'
 	action: function(state) {
-		Menu.display()
+		state = LevelFuncs.generateLevel(state);
 		state.keyStates = {};
 		state.pressStates = {};
 		state.mouseDown = {};
@@ -2094,6 +2094,21 @@ Artsy.actions.Menu = {
 		return state;
 	}
 }
+
+// Artsy.actions.Menu = {
+// 	name: "Menu",
+// 	affectsCanvas: false,
+// 	pressCode: 27, // 'esc'
+// 	action: function(state) {
+// 		Menu.display()
+// 		state.keyStates = {};
+// 		state.pressStates = {};
+// 		state.mouseDown = {};
+// 		state.touches = [];
+// 		Input.mouseCancel();
+// 		return state;
+// 	}
+// }
 
 Artsy.actions.SDL_SCANCODE_1 = {
 	name: "SDL_SCANCODE_1",
