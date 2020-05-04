@@ -449,8 +449,9 @@ Artsy.update = function() {
 
 		var message = [];
 		if (Artsy.state.haskeyed == false) {
-			message.push("BECOME");
-			message.push("A GREAT ARTIST");
+			message.push("BECOME A");
+			message.push("GREAT ARTIST IN");
+			message.push("JUST 10 SECONDS");
 			message.push("Sketchpad");
 			message.push("Press key to art");
 		}
