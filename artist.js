@@ -452,7 +452,6 @@ Artsy.update = function() {
 			message.push("BECOME A");
 			message.push("GREAT ARTIST IN");
 			message.push("JUST 10 SECONDS");
-			message.push("Sketchpad");
 			message.push("Press key to art");
 		}
 		if (Artsy.state.fran == true) {
