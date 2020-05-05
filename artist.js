@@ -91,7 +91,7 @@ function TouchKey(keyCode, x, y, w, h) {
 }
 
 var touchKeys = [
-	new TouchKey(187, 0 / 8, 0 / 8, 1 / 8, 1 / 8), // Save / Equals
+	new TouchKey(27, 0 / 8, 0 / 8, 1 / 8, 1 / 8), // Reset / ESC
 	new TouchKey(46, 1 / 8, 0 / 8, 1 / 8, 1 / 8), // Undo / Delete
 	new TouchKey(13, 2 / 8, 0 / 8, 3 / 8, 1 / 8), // Enter
 	new TouchKey(220, 5 / 8, 0 / 8, 2 / 8, 1 / 8), // Gallery '\'
@@ -563,7 +563,7 @@ Input.keyDownHandler = function(e) {
 	Sounder.enableSounds();
 	var keyCode = e.keyCode;
 
-	if (keyCode == 192 && false) { // Tilde
+	if (keyCode == 192) { // Tilde
 		Input.mouseCancel();
 		Players.keyboard.pressStates = {};
 		Players.keyboard.keyStates = {};
@@ -2085,21 +2085,6 @@ Artsy.actions.Reset = {
 	name: "Menu",
 	affectsCanvas: false,
 	pressCode: 27, // 'esc'
-	action: function(state) {
-		state = LevelFuncs.generateLevel(state);
-		state.keyStates = {};
-		state.pressStates = {};
-		state.mouseDown = {};
-		state.touches = [];
-		Input.mouseCancel();
-		return state;
-	}
-}
-
-Artsy.actions.Tilde = {
-	name: "Menu",
-	affectsCanvas: false,
-	pressCode: 192, // 'esc'
 	action: function(state) {
 		state = LevelFuncs.generateLevel(state);
 		state.keyStates = {};
