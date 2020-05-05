@@ -1844,7 +1844,6 @@ Artsy.actions.SDL_SCANCODE_SPACE = {
 	keycode: 32, // SPACE
 	emotion: new Emotion(32, 0, 0, 0, 0, 0),
 	action: function(state) {
-		Sounder.playSound("sfx_0");
 		return Artsy.actions.circle_thing.action(state);
 	}
 }
