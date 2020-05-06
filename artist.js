@@ -34,7 +34,7 @@ function Player(id, color) {
 	this.color = color;
 
 	this.brushType = Math.floor(1 + Math.random() * 8) % 9;
-	this.brushSize = Math.floor(1 + Math.random() * 72);
+	this.brushSize = Math.floor(16 + Math.random() * 56);
 	if (this.brushType == 7) {
 		this.brushSize = Math.ceil(this.brushSize / 2);
 	}
