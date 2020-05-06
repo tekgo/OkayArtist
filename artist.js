@@ -1168,6 +1168,7 @@ Gallery.displayGallery = function(force = false) {
 	var newGallery = document.createElement("div");
 	newGallery.id = "gallery";
 	var close = document.createElement("div");
+	close.className = "option";
 	close.innerHTML = "X";
 	close.onclick = function() { Gallery.displayGallery() };
 	newGallery.appendChild(close);
@@ -1190,6 +1191,7 @@ Gallery.displayGallery = function(force = false) {
 			var imgTag = document.createElement("img")
 			imgTag.src = url;
 			imgTag.setAttribute("download", "img" + extension);
+			imgTag.className = "art";
 			let tag = imgTag;
 			if (native) {
 				// On native iOS the img callout doesn't work so make it a link
@@ -1200,8 +1202,28 @@ Gallery.displayGallery = function(force = false) {
 				tag = linkTag;
 			}
 
-			imgTags[j] = tag;
-			newGallery.appendChild(tag);
+			let divTag = document.createElement("div");
+			divTag.className = "item";
+			divTag.appendChild(tag);
+
+			// We don't support cloning gifs
+			if (img.src.indexOf("image/gif") == -1) {
+				let cloneTag = document.createElement("a");
+				cloneTag.innerHTML = "<img src=\"clone.png\">"
+				cloneTag.className = "cloneButton";
+				cloneTag.onclick = function() {
+					Gallery.displayGallery();
+					let data = ImgFuncs.fromImage(img);
+					ImgFuncs.addBufferToImageData(data);
+					Artsy.state.imageData = data;
+					Artsy.state.canvasNeedsUpdate = true;
+				};
+				divTag.appendChild(cloneTag);
+			}
+
+
+			imgTags[j] = divTag;
+			newGallery.appendChild(divTag);
 
 			if (newGallery.childElementCount == images.length + 1) {
 				while (newGallery.firstChild) {

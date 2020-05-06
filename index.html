@@ -58,7 +58,7 @@
 		background-color: grey;
 	}
 
-	#gallery, #menu {
+	#gallery {
 		background: black;
 		position: fixed;
 		top:0px;
@@ -69,11 +69,27 @@
 		-webkit-overflow-scrolling: touch;
 	}
 
-	#gallery img {
+	#gallery .art {
+		width: 128px;
+		height: 128px;
+	}
+
+	#gallery .item {
 		border: 1px solid white;
 		margin: 2px;
 		width: 128px;
 		height: 128px;
+		margin: 2px;
+		float:left;
+		position: relative;
+	}
+
+	#gallery .cloneButton {
+		display: block;
+		position: absolute;
+		top:0px;
+		left:0px;
+
 	}
 
 	#gallery img, #gallery a {
@@ -91,7 +107,7 @@
 		float:left;
 	}
 
-	#gallery div, #menu div {
+	#gallery .option {
 		font-size: 64pt;
 		font-family: sans-serif;
 		float:left;
