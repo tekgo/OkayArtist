@@ -194,7 +194,9 @@ Artsy.createState = function(options = {}) {
 		blip: true,
 		saveState: null,
 		similar: null,
-		similarImg: null
+		similarImg: null,
+		lastSaveTick: 0,
+		eternal: false,
 	};
 
 	state.fran = false;
@@ -504,6 +506,11 @@ Artsy.update = function() {
 			}
 
 		}
+	}
+
+	// Set the snapshot state approximately every 10 seconds.
+	if (!Artsy.state.eternal && Artsy.state.ticks - Artsy.state.lastSaveTick > 600) {
+		Artsy.state = Artsy.actions.SDL_SCANCODE_EQUALS.action(Artsy.state);
 	}
 
 	window.requestAnimationFrame(Artsy.update);
@@ -2384,6 +2391,8 @@ Artsy.actions.SDL_SCANCODE_DELETE = {
 		if (saveState) {
 			state.imageData = ImgFuncs.copyData(saveState.imageData);
 		}
+		state.lastSaveTick = state.ticks;
+		Sounder.playSound("sfx_6")
 		return state;
 	}
 }
@@ -2404,7 +2413,9 @@ Artsy.actions.SDL_SCANCODE_EQUALS = {
 	pressCode: 187, // 
 	action: function(state) {
 		// Save snapshot.
+		state.lastSaveTick = state.ticks;
 		state.saveState = { imageData: ImgFuncs.copyData(state.imageData) }
+		Sounder.playSound("sfx_7")
 		return state;
 	}
 }
