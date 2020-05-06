@@ -197,6 +197,7 @@ Artsy.createState = function(options = {}) {
 		similarImg: null,
 		lastSaveTick: 0,
 		eternal: false,
+		autoArtistActivationTick: 0
 	};
 
 	state.fran = false;
@@ -318,6 +319,7 @@ Artsy.readfiles = function(files, similar, state) {
 					newImage.src = canvas.toDataURL();
 					state.similarImg = newImage;
 					state.fran = true;
+					autoArtistActivationTick = state.ticks;
 				} else {
 					state.imageData = imgDat;
 				}
@@ -456,7 +458,8 @@ Artsy.update = function() {
 			message.push("JUST 10 SECONDS");
 			message.push("Press key to art");
 		}
-		if (Artsy.state.fran == true) {
+		// Display auto artist message for about 3 seconds.
+		if (Artsy.state.fran == true && Math.abs(Artsy.state.ticks - Artsy.state.autoArtistActivationTick) < 180) {
 			message.push("Auto artist on");
 		}
 		if (message.length > 0 && Artsy.state.similar == null) {
@@ -575,6 +578,7 @@ Input.keyDownHandler = function(e) {
 		Players.keyboard.pressStates = {};
 		Players.keyboard.keyStates = {};
 		Artsy.state.fran = !Artsy.state.fran;
+		Artsy.state.autoArtistActivationTick = Artsy.state.ticks;
 		Artsy.state.mouseDown = false
 		Artsy.state.touches = [];
 		Artsy.state.canvasNeedsUpdate = true;
