@@ -33,6 +33,12 @@ function Player(id, color) {
 	this.brushSize = 1;
 	this.color = color;
 
+	this.brushType = Math.floor(1 + Math.random() * 8) % 9;
+	this.brushSize = Math.floor(1 + Math.random() * 72);
+	if (this.brushType == 7) {
+		this.brushSize = Math.ceil(this.brushSize / 2);
+	}
+
 	this.writeState = function(state) {
 		state.keyStates = this.keyStates;
 		state.pressStates = this.pressStates;
