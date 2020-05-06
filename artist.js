@@ -2110,7 +2110,7 @@ Artsy.actions.Gallery = {
 }
 
 Artsy.actions.Reset = {
-	name: "Menu",
+	name: "Reset",
 	affectsCanvas: false,
 	pressCode: 27, // 'esc'
 	action: function(state) {
@@ -2120,6 +2120,8 @@ Artsy.actions.Reset = {
 		state.mouseDown = {};
 		state.touches = [];
 		Input.mouseCancel();
+		// Play a random sound.
+		Sounder.playSound("sfx_" + Math.floor(Math.random() * 9) % 9);
 		return state;
 	}
 }
