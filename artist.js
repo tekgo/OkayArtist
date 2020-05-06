@@ -2111,15 +2111,10 @@ Artsy.actions.Gallery = {
 
 Artsy.actions.Reset = {
 	name: "Reset",
-	affectsCanvas: false,
+	affectsCanvas: true,
 	pressCode: 27, // 'esc'
 	action: function(state) {
 		state = LevelFuncs.generateLevel(state);
-		state.keyStates = {};
-		state.pressStates = {};
-		state.mouseDown = {};
-		state.touches = [];
-		Input.mouseCancel();
 		// Play a random sound.
 		Sounder.playSound("sfx_" + Math.floor(Math.random() * 9) % 9);
 		return state;
