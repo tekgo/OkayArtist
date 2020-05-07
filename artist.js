@@ -162,8 +162,16 @@ var Artsy = {};
 
 /* Constants */
 
+function getUrlParameter(name) {
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    var results = regex.exec(location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+};
+
 Artsy.constants = {
-	defaultSize: 128
+	defaultSize: 128,
+	useCanvasPoints: (getUrlParameter("multitouch") || undefined)
 }
 
 /* Properties */
@@ -370,7 +378,17 @@ Artsy.update = function() {
 		Artsy.state.prevCopy = copy;
 	}
 
-	// Update non-keyboard/touch inputsd.
+	let canvasPoints = Input.allCanvasPoints();
+	if (Artsy.constants.useCanvasPoints && canvasPoints && canvasPoints.length > 0) {
+		for (let i = 0; i < canvasPoints.length; i++) {
+			Artsy.state.brushPoint = canvasPoints[i];
+			Players.keyboard.brushPoint = canvasPoints[i];
+			Artsy.state = Artsy.actions.circle_thing.action(Artsy.state);
+		}
+		Artsy.state.canvasNeedsUpdate = true;
+	} 
+
+	// Update non-keyboard/touch inputs.
 	Input.updateInputs();
 
 	// Run the auto-artist.
@@ -651,7 +669,6 @@ Input.mouseHandler = function() {
 Input.touchMoveHandler = function(e) {
 	e.preventDefault();
 	Input.touches = e.touches;
-	var keyboard = Artsy.keyboard;
 	var allPoints = [];
 	for (let i = 0; i < Input.touches.length; ++i) {
 		var x = Input.touches[i].clientX;
@@ -661,19 +678,20 @@ Input.touchMoveHandler = function(e) {
 	Input.pointHandler(allPoints);
 }
 
+Input.calcOffset = function(obj) {
+	if (obj.offsetParent) {
+		var parentOffset = Input.calcOffset(obj.offsetParent);
+		return { x: parentOffset.x + obj.offsetLeft, y: parentOffset.y + obj.offsetTop };
+	}
+	return { x: 0, y: 0 };
+}
+
 // Handles all touches or mouse moves.
 Input.pointHandler = function(allPoints) {
+
 	var keyboard = Artsy.keyboard;
 	if (keyboard) {
-		function calcOffset(obj) {
-			if (obj.offsetParent) {
-				var parentOffset = calcOffset(obj.offsetParent);
-				return { x: parentOffset.x + obj.offsetLeft, y: parentOffset.y + obj.offsetTop };
-			}
-			return { x: 0, y: 0 };
-		}
-
-		var offset = calcOffset(keyboard);
+		var offset = Input.calcOffset(keyboard);
 		var width = keyboard.offsetWidth;
 		var height = keyboard.offsetHeight;
 
@@ -700,6 +718,42 @@ Input.pointHandler = function(allPoints) {
 			}
 		}
 	}
+}
+
+Input.allCanvasPoints = function() {
+	var allPoints = [];
+	for (let i = 0; i < Input.touches.length; ++i) {
+		var x = Input.touches[i].clientX;
+		var y = Input.touches[i].clientY;
+		allPoints.push({ x: x, y: y });
+	}
+	if (Input.mouseDown == true) {
+		allPoints.push(Input.mousePoint);
+	}
+
+	if (allPoints.length <= 0) {
+		return [];
+	}
+
+	let canvas = Artsy.canvas;
+	if (canvas) {
+		var imgSize = Artsy.state.width;
+		var offset = Input.calcOffset(canvas);
+		var widthM = Artsy.state.width / canvas.offsetWidth;
+		var heightM = Artsy.state.height / canvas.offsetHeight;
+
+		var points = [];
+		for (let i = 0; i < allPoints.length; ++i) {
+			var x = Math.floor((allPoints[i].x - offset.x) * widthM);
+			var y = Math.floor((allPoints[i].y - offset.y) * heightM);
+			if (x >= 0 && x < Artsy.state.width && y >= 0 && y < Artsy.state.height) {
+				points.push({ x: x, y: y });
+			}
+		}
+		return points;
+	}
+
+	return [];
 }
 
 /* Gamepad API */
