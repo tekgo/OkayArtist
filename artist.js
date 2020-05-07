@@ -378,14 +378,20 @@ Artsy.update = function() {
 		Artsy.state.prevCopy = copy;
 	}
 
-	let canvasPoints = Input.allCanvasPoints();
-	if (Artsy.constants.useCanvasPoints && canvasPoints && canvasPoints.length > 0) {
-		for (let i = 0; i < canvasPoints.length; i++) {
-			Artsy.state.brushPoint = canvasPoints[i];
-			Players.keyboard.brushPoint = canvasPoints[i];
-			Artsy.state = Artsy.actions.circle_thing.action(Artsy.state);
+	if (Artsy.constants.useCanvasPoints) {
+		let canvasPoints = Input.allCanvasPoints();
+		if (canvasPoints && canvasPoints.length > 0) {
+			if (Artsy.constants.useCanvasPoints == "1") {
+				for (let i = 0; i < canvasPoints.length; i++) {
+					Artsy.state.brushPoint = canvasPoints[i];
+					Players.keyboard.brushPoint = canvasPoints[i];
+					Artsy.state = Artsy.actions.circle_thing.action(Artsy.state);
+				}
+			} else {
+				Players.keyboard.brushPoint = canvasPoints[0];
+			}
+			Artsy.state.canvasNeedsUpdate = true;
 		}
-		Artsy.state.canvasNeedsUpdate = true;
 	} 
 
 	// Update non-keyboard/touch inputs.
