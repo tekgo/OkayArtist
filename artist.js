@@ -171,7 +171,8 @@ function getUrlParameter(name) {
 
 Artsy.constants = {
 	defaultSize: 128,
-	useCanvasPoints: (getUrlParameter("multitouch") || undefined)
+	useCanvasPoints: (getUrlParameter("multitouch") || undefined),
+	canPlayContinuous: (getUrlParameter("continuous") || undefined),
 }
 
 /* Properties */
@@ -550,6 +551,7 @@ Artsy.update = function() {
 		Artsy.state = Artsy.actions.SDL_SCANCODE_EQUALS.action(Artsy.state);
 	}
 
+	Sounder.resetContinuous();
 	window.requestAnimationFrame(Artsy.update);
 };
 
@@ -1964,7 +1966,7 @@ Artsy.actions.circle_thing = {
 				thisState = brush.action(thisState);
 			}
 		}
-
+		Sounder.playContinuous();
 		return thisState;
 	}
 }
@@ -3102,6 +3104,46 @@ Sounder.playSound = function(soundName) {
 		}
 		Sounder.lastSource = source;   
 	})
+}
+
+Sounder.playContinuous = function() {
+	if (!Artsy.constants.canPlayContinuous) {
+		return;
+	}
+	if (Sounder.continuous) {
+		return;
+	}
+	Sounder.continuous = 1;
+	if (Sounder.continuousSource) {
+		return;
+	}
+	let soundName = "drone"
+	Sounder.loadSound(soundName, buffer => {
+		var source = Sounder.audioContext.createBufferSource(); // creates a sound source
+		source.loop = true;
+		source.buffer = buffer;                    // tell the source which sound to play
+		source.connect(Sounder.audioContext.destination);       // connect the source to the context's destination (the speakers)
+		source.start(0);
+		if (Sounder.continuousSource) {
+			try { Sounder.continuousSource.stop(); } catch (e) {}
+		}
+		Sounder.continuousSource = source;   
+	})
+}
+
+Sounder.resetContinuous = function() {
+	if (!Sounder.continuous) {
+		Sounder.stopContinuous()
+	} 
+	Sounder.continuous = 0;
+}
+
+Sounder.stopContinuous = function() {
+	Sounder.continuous = 0;
+	if (Sounder.continuousSource) {
+		try { Sounder.continuousSource.stop(); } catch (e) {}
+	}
+	Sounder.continuousSource = null;
 }
 
 /* functions */
