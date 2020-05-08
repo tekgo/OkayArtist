@@ -3078,7 +3078,7 @@ Sounder.enableSounds = function() {
 		Sounder.soundsLoaded = 0;
 		Sounder.audioContext.resume();
 	}
-	if (Sounder.audioContext.state == "closed") {
+	if (Sounder.audioContext.state != "running") {
 		Sounder.audioContext = new AudioContext();
 		Sounder.soundsLoaded = 0;
 	}
