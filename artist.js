@@ -271,7 +271,6 @@ Artsy.start = function() {
 
 	document.addEventListener("keydown", Input.keyDownHandler, false);
 	document.addEventListener("keyup", Input.keyUpHandler, false);
-	document.addEventListener("blur", function() { Sounder.soundsLoaded = 0}, false);
 	main.addEventListener("touchstart", Input.touchMoveHandler, false);
 	main.addEventListener("touchstart", Sounder.enableSounds, false);
 	main.addEventListener("touchend", Input.touchMoveHandler, false);
@@ -3075,6 +3074,10 @@ Sounder.soundsLoaded = 0;
 
 Sounder.enableSounds = function() {
 	// Load and play a blank sound to enable sound in safari
+	if (Sounder.audioContext.state == "suspended") {
+		Sounder.soundsLoaded = 0;
+		Sounder.audioContext.resume();
+	}
 	if (Sounder.soundsLoaded > 10) {
 		return;
 	}
