@@ -3161,7 +3161,10 @@ Sounder.playContinuous = function(id, soundName) {
 		var source = Sounder.audioContext.createBufferSource(); // creates a sound source
 		source.loop = true;
 		source.buffer = buffer;                    // tell the source which sound to play
-		source.connect(Sounder.audioContext.destination);       // connect the source to the context's destination (the speakers)
+		let gain = Sounder.audioContext.createGain();
+		gain.gain.value = 0.75;
+		source.connect(gain);  
+		gain.connect(Sounder.audioContext.destination);       // connect the source to the context's destination (the speakers)
 		source.start(0);
 		if (Sounder.continuousSources[id]) {
 			try { Sounder.continuousSources[id].stop(); } catch (e) {}
