@@ -337,6 +337,7 @@ Artsy.readfiles = function(files, similar, state) {
 				} else {
 					state.imageData = imgDat;
 				}
+				state.canvasNeedsUpdate = true;
 			}
 		};
 		reader.readAsDataURL(file);
