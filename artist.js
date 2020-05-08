@@ -1424,6 +1424,7 @@ Artsy.actions.also_do_something_neat_idk = {
 		}
 
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1477,6 +1478,7 @@ Artsy.actions.do_a_thing = {
 		}
 
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1512,6 +1514,7 @@ Artsy.actions.do_another_thing = {
 		}
 
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1533,6 +1536,7 @@ Artsy.actions.do_a_weird_thing = {
 			}
 		}
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1567,6 +1571,7 @@ Artsy.actions.do_a_locational_thing = {
 
 			ImgFuncs_setColorArr(output, x, y, c2);
 		}
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1602,6 +1607,7 @@ Artsy.actions.down_thing = {
 			}
 		}
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1629,6 +1635,7 @@ Artsy.actions.bandit = {
 			}
 		}
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1659,6 +1666,7 @@ Artsy.actions.magic = {
 			}
 		}
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1671,6 +1679,7 @@ Artsy.actions.findEdgesRed = {
 	action: function(state) {
 		var output = ImgFuncs.findEdges(state.imageData, 2, 192, new Array(255, 0, 0))
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1683,6 +1692,7 @@ Artsy.actions.findEdgesWhite = {
 	action: function(state) {
 		var output = ImgFuncs.findEdges(state.imageData, 0, 128, new Array(255, 255, 255))
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1695,6 +1705,7 @@ Artsy.actions.findEdgesGreen = {
 	action: function(state) {
 		var output = ImgFuncs.findEdges(state.imageData, 1, 128, new Array(0, 255, 0))
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1706,6 +1717,7 @@ Artsy.actions.SDL_SCANCODE_Q = {
 	emotion: new Emotion(81, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushPoint.y = underflowMod(state.brushPoint.y - 1, state.imageData.height)
+		Sounder.playContinuousMap(this.keycode)
 		return Artsy.actions.circle_thing.action(state);
 	}
 }
@@ -1722,6 +1734,7 @@ Artsy.actions.SDL_SCANCODE_R = {
 		}
 
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1775,6 +1788,7 @@ Artsy.actions.SDL_SCANCODE_U = {
 			pass(unidx, ImgFuncs.unswap);
 		}
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1805,6 +1819,7 @@ Artsy.actions.SDL_SCANCODE_P = {
 		}
 
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1820,6 +1835,7 @@ Artsy.actions.SDL_SCANCODE_D = {
 		ImgFuncs.skewx_channel(output, 0, 0, output.width, output.height, 2, 1)
 		ImgFuncs.skewx_channel(output, 0, 0, output.width, output.height, 3, 2)
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1849,6 +1865,7 @@ Artsy.actions.SDL_SCANCODE_K = {
 		}
 
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1928,6 +1945,7 @@ Artsy.actions.SDL_SCANCODE_B = {
 			pass(unidx, uncmp);
 		}
 		state.imageData = output;
+		Sounder.playContinuousMap(this.keycode)
 		return state;
 	}
 }
@@ -1966,7 +1984,7 @@ Artsy.actions.circle_thing = {
 				thisState = brush.action(thisState);
 			}
 		}
-		Sounder.playContinuous();
+		Sounder.playContinuousMap("brush","blast-cut");
 		return thisState;
 	}
 }
@@ -3106,44 +3124,68 @@ Sounder.playSound = function(soundName) {
 	})
 }
 
-Sounder.playContinuous = function() {
+Sounder.continuousMap = {};
+Sounder.continuousStates = {};
+Sounder.continuousSources = {};
+
+Sounder.playContinuousMap = function(id, directSound) {
+	if(!id) {
+		return;
+	}
+	if (directSound) {
+		Sounder.continuousMap[id] = directSound;
+	}
+	if (!Sounder.continuousMap[id]) {
+		let sounds = ["wah-cut","quiet-cut","buzzy-cut","blast-cut"];
+		let idx = Math.floor(Math.random() * sounds.length * sounds.length) % sounds.length;
+		Sounder.continuousMap[id] = sounds[idx];
+	}
+	Sounder.playContinuous(id, Sounder.continuousMap[id])
+}
+
+Sounder.playContinuous = function(id, soundName) {
 	if (!Artsy.constants.canPlayContinuous) {
 		return;
 	}
-	if (Sounder.continuous) {
+	if (!id || !soundName) {
 		return;
 	}
-	Sounder.continuous = 1;
-	if (Sounder.continuousSource) {
+	if (Sounder.continuousStates[id]) {
 		return;
 	}
-	let soundName = "drone"
+	Sounder.continuousStates[id] = 1;
+	if (Sounder.continuousSources[id]) {
+		return;
+	}
 	Sounder.loadSound(soundName, buffer => {
 		var source = Sounder.audioContext.createBufferSource(); // creates a sound source
 		source.loop = true;
 		source.buffer = buffer;                    // tell the source which sound to play
 		source.connect(Sounder.audioContext.destination);       // connect the source to the context's destination (the speakers)
 		source.start(0);
-		if (Sounder.continuousSource) {
-			try { Sounder.continuousSource.stop(); } catch (e) {}
+		if (Sounder.continuousSources[id]) {
+			try { Sounder.continuousSources[id].stop(); } catch (e) {}
 		}
-		Sounder.continuousSource = source;   
+		Sounder.continuousSources[id] = source;   
 	})
 }
 
 Sounder.resetContinuous = function() {
-	if (!Sounder.continuous) {
-		Sounder.stopContinuous()
-	} 
-	Sounder.continuous = 0;
+	let keys = Object.keys(Sounder.continuousStates);
+	keys.forEach( key => {
+		if (!Sounder.continuousStates[key]) {
+			Sounder.stopContinuous(key)
+		} 
+		Sounder.continuousStates[key] = 0;
+	})
 }
 
-Sounder.stopContinuous = function() {
-	Sounder.continuous = 0;
-	if (Sounder.continuousSource) {
-		try { Sounder.continuousSource.stop(); } catch (e) {}
+Sounder.stopContinuous = function(id) {
+	Sounder.continuousStates[id] = 0;
+	if (Sounder.continuousSources[id]) {
+		try { Sounder.continuousSources[id].stop(); } catch (e) {}
 	}
-	Sounder.continuousSource = null;
+	Sounder.continuousSources[id] = null;
 }
 
 /* functions */
