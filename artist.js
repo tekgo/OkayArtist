@@ -390,6 +390,9 @@ Artsy.update = function() {
 			} else {
 				Players.keyboard.brushPoint = canvasPoints[0];
 			}
+			Artsy.state.haskeyed = true;
+			Artsy.state.fran = false;
+			Players.autoArtist.isActive = Artsy.state.fran;
 			Artsy.state.canvasNeedsUpdate = true;
 		}
 	} 
