@@ -3078,6 +3078,10 @@ Sounder.enableSounds = function() {
 		Sounder.soundsLoaded = 0;
 		Sounder.audioContext.resume();
 	}
+	if (Sounder.audioContext.state == "closed") {
+		Sounder.audioContext = new AudioContext();
+		Sounder.soundsLoaded = 0;
+	}
 	if (Sounder.soundsLoaded > 10) {
 		return;
 	}
