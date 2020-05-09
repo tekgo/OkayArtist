@@ -3145,7 +3145,7 @@ Sounder.playContinuousMap = function(id, directSound) {
 		Sounder.continuousMap[id] = directSound;
 	}
 	if (!Sounder.continuousMap[id]) {
-		let sounds = ["wah-cut","quiet-cut","buzzy-cut","blast-cut"];
+		let sounds = ["wah-cut","quiet-cut","buzzy-cut","blast-cut","wah-cut-up","quiet-cut-up","buzzy-cut-up","blast-cut-up"];
 		let idx = Math.floor(Math.random() * sounds.length * sounds.length) % sounds.length;
 		Sounder.continuousMap[id] = sounds[idx];
 	}
