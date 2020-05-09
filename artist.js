@@ -171,8 +171,8 @@ function getUrlParameter(name) {
 
 Artsy.constants = {
 	defaultSize: 128,
-	useCanvasPoints: (getUrlParameter("multitouch") || undefined),
-	canPlayContinuous: (getUrlParameter("continuous") || undefined),
+	useCanvasPoints: (getUrlParameter("multitouch") || 1),
+	canPlayContinuous: (getUrlParameter("continuous") || 1),
 }
 
 /* Properties */
