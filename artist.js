@@ -173,6 +173,7 @@ Artsy.constants = {
 	defaultSize: 128,
 	useCanvasPoints: (getUrlParameter("multitouch") || 1),
 	canPlayContinuous: (getUrlParameter("continuous") || 1),
+	midi: (getUrlParameter("midi") || 0),
 }
 
 /* Properties */
@@ -862,6 +863,9 @@ Input.midiAccess = null;
 Input.midiEventQueue = new Array();
 
 Input.requestMIDIAccess = function() {
+	if (!Artsy.constants.midi) {
+		return;
+	}
 
 	function startListening(midiAccess) {
 		/* reset midiInputs here */
