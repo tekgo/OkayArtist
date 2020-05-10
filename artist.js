@@ -174,6 +174,7 @@ Artsy.constants = {
 	useCanvasPoints: (getUrlParameter("multitouch") || 1),
 	canPlayContinuous: (getUrlParameter("continuous") || 1),
 	midi: (getUrlParameter("midi") || 0),
+	gamepad: (getUrlParameter("gamepad") || 0),
 }
 
 /* Properties */
@@ -281,8 +282,10 @@ Artsy.start = function() {
 	main.addEventListener("mousedown", Sounder.enableSounds, false);
 	main.addEventListener("mouseup", Input.mouseUpHandler, false);
 	main.addEventListener("mousemove", Input.mouseMoveHandler, false);
-	window.addEventListener("gamepadconnected", Input.gamepadConnected, false);
-	window.addEventListener("gamepaddisconnected", Input.gamepadDisconnected, false);
+	if (Artsy.constants.gamepad) {
+		window.addEventListener("gamepadconnected", Input.gamepadConnected, false);
+		window.addEventListener("gamepaddisconnected", Input.gamepadDisconnected, false);
+	}
 
 	Artsy.allActions = Artsy.findAllActions();
 	Artsy.update();
@@ -825,6 +828,9 @@ function GamepadState(gamepad) {
 }
 
 Input.gamepadConnected = function(event) {
+	if (!Artsy.constants.gamepad) {
+		return;
+	}
 	let gamepad = event.gamepad;
 	if (gamepad.mapping !== "standard") {
 		return;
@@ -973,6 +979,9 @@ Input.updateInputs = function() {
 
 // https://w3c.github.io/gamepad/#remapping
 Input.updateGamepads = function() {
+	if (!Artsy.constants.gamepad) {
+		return;
+	}
 
 	var changed = false;
 
