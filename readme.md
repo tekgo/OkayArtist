@@ -8,6 +8,14 @@ If you notice any bugs or it doesn't work correctly on your device please open u
 
 More info about 'BECOME A GREAT ARTIST IN JUST 10 SECONDS' can be found at: https://bitbucket.org/runhello/ufo http://ludumdare.com/compo/ludum-dare-27/?action=preview&uid=4987 https://msm.runhello.com/p/987
 
+# Experimental Flags
+
+The following query parameters can be set as query parameters to enable or change functionality. In the format `?<param>=<value>&<otherParam>=<otherValue>` 
+
+- **defaultSize**: will set the size of the canvas, defaults to 128.
+- **midi**: if set to any non-zero value will enable midi support, defaults to 0.
+- **gamepad**: if set to any non-zero value it will enable gamepad support, defaults to 0.
+
 # License
 
 > The contents of this repository are made available to you under the following license.
