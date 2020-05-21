@@ -249,6 +249,7 @@ Artsy.start = function() {
 
 	Artsy.state = Artsy.actions.greyFill.action(Artsy.state);
 	Artsy.state = LevelFuncs.generateLevel(Artsy.state);
+	Artsy.state = Artsy.actions.SDL_SCANCODE_EQUALS.action(Artsy.state);
 
 	document.addEventListener("keydown", Input.keyDownHandler, false);
 	document.addEventListener("keyup", Input.keyUpHandler, false);
@@ -2141,6 +2142,7 @@ Artsy.actions.SDL_SCANCODE_RETURN = {
 		Gallery.saveImageData(state.imageData);
 		Sounder.playSound("sfx_1");
 		Input.mouseCancel();
+		state = Artsy.actions.SNAP.action(state);
 		return Artsy.actions.Gallery.action(state);
 	}
 }
@@ -2482,10 +2484,18 @@ Artsy.actions.SDL_SCANCODE_EQUALS = {
 	affectsCanvas: true,
 	pressCode: 187, // 
 	action: function(state) {
+		Sounder.playSound("sfx_7")
+		return Artsy.actions.SNAP.action(state);
+	}
+}
+
+Artsy.actions.SNAP = {
+	name: "SNAP",
+	affectsCanvas: true,
+	action: function(state) {
 		// Save snapshot.
 		state.lastSaveTick = state.ticks;
 		state.saveState = { imageData: ImgFuncs.copyData(state.imageData) }
-		Sounder.playSound("sfx_7")
 		return state;
 	}
 }
