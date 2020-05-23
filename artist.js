@@ -270,6 +270,7 @@ Artsy.start = function() {
 
 	Artsy.state = Artsy.actions.greyFill.action(Artsy.state);
 	Artsy.state = LevelFuncs.generateLevel(Artsy.state);
+	Artsy.state = Artsy.actions.SDL_SCANCODE_EQUALS.action(Artsy.state);
 
 	document.addEventListener("keydown", Input.keyDownHandler, false);
 	document.addEventListener("keyup", Input.keyUpHandler, false);
@@ -607,7 +608,9 @@ var Input = {
 	touches: new Array(),
 	mouseDown: false,
 	mousePoint: { x: 0, y: 0 },
-	gamepads: new Array()
+	gamepads: new Array(),
+	targets: {},
+	touchIDs: []
 };
 
 Input.keyDownHandler = function(e) {
@@ -655,23 +658,25 @@ Input.keyUpHandler = function(e) {
 
 Input.mouseDownHandler = function(e) {
 	Input.mouseDown = true;
-	Input.mousePoint = { x: e.clientX, y: e.clientY };
+	Input.mousePoint = { x: e.clientX, y: e.clientY, id: "MOUSE" };
 	Input.mouseHandler();
 }
 
 Input.mouseUpHandler = function(e) {
 	Input.mouseDown = false;
-	Input.mousePoint = { x: e.clientX, y: e.clientY };
+	Input.mousePoint = { x: e.clientX, y: e.clientY, id: "MOUSE" };
+	Input.targets["MOUSE"] = null;
 	Input.mouseHandler();
 }
 
 Input.mouseMoveHandler = function(e) {
-	Input.mousePoint = { x: e.clientX, y: e.clientY };
+	Input.mousePoint = { x: e.clientX, y: e.clientY, id: "MOUSE" };
 	Input.mouseHandler();
 }
 
 Input.mouseCancel = function() {
 	Input.mouseDown = false;
+	Input.targets["MOUSE"] = null;
 	Input.mouseHandler();
 }
 
@@ -685,14 +690,32 @@ Input.mouseHandler = function() {
 
 Input.touchMoveHandler = function(e) {
 	e.preventDefault();
-	Input.touches = e.touches;
+	let oldIDs = Input.touchIDs;
+
+	let touches = [];
+
+	for (let i = 0; i < e.touches.length; i++) {
+		touches.push(e.touches[i]);
+	}
+
+	Input.touches = touches;
+	Input.touchIDs = touches.map(touch => touch.identifier );
 	var allPoints = [];
 	for (let i = 0; i < Input.touches.length; ++i) {
 		var x = Input.touches[i].clientX;
 		var y = Input.touches[i].clientY;
-		allPoints.push({ x: x, y: y });
+		allPoints.push({ x: x, y: y, id: Input.touches[i].identifier });
 	}
 	Input.pointHandler(allPoints);
+
+	if (typeof Input.touchIDs.includes !== "undefined") { 
+		for (let i = oldIDs.length - 1; i >= 0; i--) {
+			let id = oldIDs[i];
+			if (Input.targets.hasOwnProperty(id) && !Input.touchIDs.includes(id)) {
+				delete Input.targets[id];
+			}
+		}
+	}
 }
 
 Input.calcOffset = function(obj) {
@@ -703,8 +726,25 @@ Input.calcOffset = function(obj) {
 	return { x: 0, y: 0 };
 }
 
+Input.getAllPoints = function() {
+	var allPoints = [];
+	for (let i = 0; i < Input.touches.length; ++i) {
+		var x = Input.touches[i].clientX;
+		var y = Input.touches[i].clientY;
+		allPoints.push({ x: x, y: y, id: Input.touches[i].identifier});
+	}
+	if (Input.mouseDown == true) {
+		allPoints.push(Input.mousePoint);
+	}
+
+	return allPoints;
+}
+
 // Handles all touches or mouse moves.
 Input.pointHandler = function(allPoints) {
+	if (document.getElementById("gallery")) {
+		return;
+	}
 
 	var keyboard = Artsy.keyboard;
 	if (keyboard) {
@@ -714,9 +754,16 @@ Input.pointHandler = function(allPoints) {
 
 		var points = [];
 		for (let i = 0; i < allPoints.length; ++i) {
+			let currentTarget = Input.targets[allPoints[i].id];
+			if (currentTarget && currentTarget != "KEYBOARD") {
+				continue;
+			}
 			var x = (allPoints[i].x - offset.x) / width;
 			var y = (allPoints[i].y - offset.y) / height;
-			points.push({ x: x, y: y });
+			if (x >= 0 && y >= 0 && x <= 1 && y <= 1) {
+				Input.targets[allPoints[i].id] = "KEYBOARD";
+				points.push({ x: x, y: y });
+			}
 		}
 
 		for (let i = 0; i < touchKeys.length; ++i) {
@@ -738,19 +785,11 @@ Input.pointHandler = function(allPoints) {
 }
 
 Input.allCanvasPoints = function() {
-	var allPoints = [];
-	for (let i = 0; i < Input.touches.length; ++i) {
-		var x = Input.touches[i].clientX;
-		var y = Input.touches[i].clientY;
-		allPoints.push({ x: x, y: y });
-	}
-	if (Input.mouseDown == true) {
-		allPoints.push(Input.mousePoint);
+	if (document.getElementById("gallery")) {
+		return;
 	}
 
-	if (allPoints.length <= 0) {
-		return [];
-	}
+	let allPoints = Input.getAllPoints();
 
 	let canvas = Artsy.canvas;
 	if (canvas) {
@@ -761,9 +800,14 @@ Input.allCanvasPoints = function() {
 
 		var points = [];
 		for (let i = 0; i < allPoints.length; ++i) {
+			let currentTarget = Input.targets[allPoints[i].id];
+			if (currentTarget && currentTarget != "CANVAS") {
+				continue;
+			}
 			var x = Math.floor((allPoints[i].x - offset.x) * widthM);
 			var y = Math.floor((allPoints[i].y - offset.y) * heightM);
 			if (x >= 0 && x < Artsy.state.width && y >= 0 && y < Artsy.state.height) {
+				Input.targets[allPoints[i].id] = "CANVAS";
 				points.push({ x: x, y: y });
 			}
 		}
@@ -2198,6 +2242,7 @@ Artsy.actions.SDL_SCANCODE_RETURN = {
 		Gallery.saveImageGroup(imageGroup);
 		Sounder.playSound("sfx_1");
 		Input.mouseCancel();
+		state = Artsy.actions.SNAP.action(state);
 		return Artsy.actions.Gallery.action(state);
 	}
 }
@@ -2539,10 +2584,18 @@ Artsy.actions.SDL_SCANCODE_EQUALS = {
 	affectsCanvas: true,
 	pressCode: 187, // 
 	action: function(state) {
+		Sounder.playSound("sfx_7")
+		return Artsy.actions.SNAP.action(state);
+	}
+}
+
+Artsy.actions.SNAP = {
+	name: "SNAP",
+	affectsCanvas: true,
+	action: function(state) {
 		// Save snapshot.
 		state.lastSaveTick = state.ticks;
 		state.saveState = { imageData: ImgFuncs.copyData(state.imageData) }
-		Sounder.playSound("sfx_7")
 		return state;
 	}
 }
