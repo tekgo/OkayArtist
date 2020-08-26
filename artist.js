@@ -643,6 +643,17 @@ Input.keyDownHandler = function(e) {
 	Players.autoArtist.isActive = Artsy.state.fran;
 	Players.keyboard.isActive = !Artsy.state.fran;
 
+	var actions = Artsy.allActions;
+	for (let i = 0; i < actions.length; ++i) {
+		var action = actions[i];
+		var combo = action["keyCombo"];
+		if (combo && combo.length > 0) {
+			if (combo.every(key => Artsy.state.keyStates[key] == true) && combo.some(key => Artsy.state.pressStates[key] == true)) {
+				Artsy.state = action.action(Artsy.state);
+				Artsy.state.canvasNeedsUpdate = true;
+			}
+		}
+	}
 }
 
 Input.keyUpHandler = function(e) {
@@ -2596,6 +2607,26 @@ Artsy.actions.SNAP = {
 		// Save snapshot.
 		state.lastSaveTick = state.ticks;
 		state.saveState = { imageData: ImgFuncs.copyData(state.imageData) }
+		return state;
+	}
+}
+
+Artsy.actions.FULLSCREEN = {
+	name: "FULLSCREEN",
+	affectsCanvas: false,
+	keyCombo: [18, 70],
+	action: function(state) {
+		
+		if (!document.fullscreenElement) {
+			let element = document.body;
+			const rfs = element.requestFullscreen || element.webkitRequestFullscreen || element.webkitRequestFullScreen || element.mozRequestFullScreen || element.msRequestFullscreen;
+			rfs.call(element);
+		} else {
+			if (document.exitFullscreen) {
+				document.exitFullscreen(); 
+			}
+		}
+
 		return state;
 	}
 }
