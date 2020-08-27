@@ -459,8 +459,10 @@ Artsy.update = function() {
 
 		}
 
-		Artsy.canvas.width = Artsy.state.width;
-		Artsy.canvas.height = Artsy.state.height;
+		if (Artsy.canvas.width != Artsy.state.width || Artsy.canvas.height != Artsy.state.height) {
+			Artsy.canvas.width = Artsy.state.width;
+			Artsy.canvas.height = Artsy.state.height;
+		}
 		var ctx = Artsy.canvas.getContext('2d');
 		// ctx.drawImage(Artsy.state.imageData, 0, 0);
 		ImgFuncs.putImageData(ctx, Artsy.state.imageData);
@@ -1831,24 +1833,17 @@ Artsy.actions.SDL_SCANCODE_U = {
 
 		function pass(idxf, swapf) {
 			let pt = idxf(1);
-			let x2 = pt.x;
-			let y2 = pt.y;
-			let c2 = ImgFuncs_getColor32(output, x2, y2);
-			let x1 = x2;
-			let y1 = y2;
+			let c2 = ImgFuncs_safeGetColor32(output, pt.x, pt.y);
 			let pt2 = pt;
 			let c1 = c2;
 			for (let i = 1; i < max - 1; ++i) {
-				x1 = x2;
-				y1 = y2;
+				pt = pt2;
 				pt2 = idxf(i + 1)
-				x2 = pt2.x;
-				y2 = pt2.y;
 				c1 = c2;
-				c2 = ImgFuncs_getColor32(output, x2, y2);
+				c2 = ImgFuncs_safeGetColor32(output, pt2.x, pt2.y);
 				const colors = swapf(ImgFuncs.lesser(c1, c2), ImgFuncs.greater(c1, c2));
-				ImgFuncs_setColor32(output, x1, y1, colors.a);
-				ImgFuncs_setColor32(output, x2, y2, colors.b);
+				ImgFuncs_safeSetColor32(output, pt.x, pt.y, colors.a);
+				ImgFuncs_safeSetColor32(output, pt2.x, pt2.y, colors.b);
 				c2 = colors.b;
 			}
 		}
@@ -1868,23 +1863,23 @@ Artsy.actions.SDL_SCANCODE_P = {
 	keycode: 80, // P
 	emotion: new Emotion(80, 0, 0, 0, 0, 0),
 	action: function(state) {
-		var output = state.imageData;
+		let output = state.imageData;
 
-		var max = output.width * output.height;
-		var besides = state.ticks % 2;
+		let max = output.width * output.height;
+		let besides = state.ticks % 2;
 
 		function idxf(_i) {
-			var i = _i - 1 + besides;
+			let i = _i - 1 + besides;
 			return { x: i % output.width, y: Math.floor(i / output.width) }
 		}
 
 		for (let i = 1; i < max - 2; i += 2) {
-			var p1 = idxf(i);
-			var p2 = idxf(i + 1);
-			var c1 = ImgFuncs_getColor32(output, p1.x, p1.y);
-			var c2 = ImgFuncs_getColor32(output, p2.x, p2.y);
-			ImgFuncs_setColor32(output, p1.x, p1.y, c2);
-			ImgFuncs_setColor32(output, p2.x, p2.y, c1);
+			let p1 = idxf(i);
+			let p2 = idxf(i + 1);
+			let c1 = ImgFuncs_safeGetColor32(output, p1.x, p1.y);
+			let c2 = ImgFuncs_safeGetColor32(output, p2.x, p2.y);
+			ImgFuncs_safeSetColor32(output, p1.x, p1.y, c2);
+			ImgFuncs_safeSetColor32(output, p2.x, p2.y, c1);
 		}
 
 		state.imageData = output;
@@ -1899,7 +1894,7 @@ Artsy.actions.SDL_SCANCODE_D = {
 	keycode: 68, // D
 	emotion: new Emotion(68, 0, 0, 0, 0, 0),
 	action: function(state) {
-		var output = state.imageData;
+		let output = state.imageData;
 		ImgFuncs.skewx_channel(output, 0, 0, output.width, output.height, 1, 0)
 		ImgFuncs.skewx_channel(output, 0, 0, output.width, output.height, 2, 1)
 		ImgFuncs.skewx_channel(output, 0, 0, output.width, output.height, 3, 2)
@@ -1915,8 +1910,8 @@ Artsy.actions.SDL_SCANCODE_K = {
 	keycode: 75, // K
 	emotion: new Emotion(75, 1, 1, 1, 1, 1),
 	action: function(state) {
-		var output = state.imageData;
-		var ticks = state.ticks;
+		let output = state.imageData;
+		let ticks = state.ticks;
 
 		switch (ticks % 4) {
 			case 0:
@@ -1967,18 +1962,18 @@ Artsy.actions.SDL_SCANCODE_B = {
 	keycode: 66, // B
 	emotion: new Emotion(66, 0, 0, 0, 0, 0),
 	action: function(state) {
-		var output = state.imageData;
-		var w = state.imageData.width;
-		var h = state.imageData.height;
-		var max = w * h;
+		let output = state.imageData;
+		const w = state.imageData.width;
+		const h = state.imageData.height;
+		const max = w * h;
 
 		function idx(_i) {
-			var __i = _i - 1;
+			let __i = _i - 1;
 			return { x: Math.floor(__i / w), y: __i % w };
 		}
 
 		function unidx(_i) {
-			var __i = max - _i;
+			let __i = max - _i;
 			return { x: Math.floor(__i / w), y: __i % w };
 		}
 
@@ -1987,24 +1982,18 @@ Artsy.actions.SDL_SCANCODE_B = {
 		function uncmp(a, b) { return a > b }
 
 		function pass(idxf, cmpf) {
-			var pt = idxf(1);
-			var x2 = pt.x;
-			var y2 = pt.y;
-			var c2 = ImgFuncs_getColor32(output, x2, y2);
-			var x1 = x2;
-			var y1 = y2;
-			var c1 = c2;
+			let pt = idxf(1);
+			let pt2 = pt;
+			let c2 = ImgFuncs_safeGetColor32(output, pt.x, pt.y);
+			let c1 = c2;
 			for (let i = 1; i < max - 1; ++i) {
-				var pt2 = idxf(i + 1)
-				x1 = x2;
-				y1 = y2;
+				pt = pt2
+				pt2 = idxf(i + 1)
 				c1 = c2;
-				x2 = pt2.x;
-				y2 = pt2.y;
-				c2 = ImgFuncs_getColor32(output, x2, y2);
-				if (cmpf(c1, c2) == true) {
-					ImgFuncs_setColor32(output, x1, y1, c2);
-					ImgFuncs_setColor32(output, x2, y2, c1);
+				c2 = ImgFuncs_safeGetColor32(output, pt2.x, pt2.y);
+				if (cmpf(c1, c2)) {
+					ImgFuncs_safeSetColor32(output, pt.x, pt.y, c2);
+					ImgFuncs_safeSetColor32(output, pt2.x, pt2.y, c1);
 					c2 = c1;
 				}
 			}
@@ -2044,11 +2033,11 @@ Artsy.actions.circle_thing = {
 	name: "circle_thing",
 	affectsCanvas: true,
 	action: function(state) {
-		var thisState = state;
-		var brushes = Artsy.findAllBrushes();
+		let thisState = state;
+		let brushes = Artsy.findAllBrushes();
 
 		for (let i = 0; i < brushes.length; ++i) {
-			var brush = brushes[i];
+			let brush = brushes[i];
 			if (brush.number == state.brushType) {
 				thisState = brush.action(thisState);
 			}
@@ -2089,7 +2078,7 @@ Artsy.actions.SDL_SCANCODE_S = {
 	emotion: new Emotion(83, 0, 0, 0, 0, 0),
 	action: function(state) {
 		ImgFuncs.flipline(state.imageData, state.brushPoint.x, state.brushPoint.y)
-		var temp = state.brushPoint.y
+		let temp = state.brushPoint.y
 		state.brushPoint.y = state.brushPoint.x
 		state.brushPoint.x = temp
 		Sounder.playSound("sfx_4");
@@ -2103,7 +2092,7 @@ Artsy.actions.SDL_SCANCODE_H = {
 	pressCode: 72, // H
 	emotion: new Emotion(72, 20, 0, 20, 0, 0),
 	action: function(state) {
-		var copy = ImgFuncs.copyData(state.imageData);
+		let copy = ImgFuncs.copyData(state.imageData);
 
 		function localFilter(size, x, y) {
 			return { x: Math.max(Math.min(size + 1, x * 3), 0), y: Math.max(Math.min(size + 1, y * 3), 0) };
@@ -3352,6 +3341,18 @@ ImgFuncs.setColor32 = function(imageData, x, y, color) {
 	imageData.u32[imageData.byteOffset(x,y)] = ImgFuncs_fixEndian(((color & 0xffffff00) | 0xff));
 }
 
+// Gets a u32 for an x,y coord.
+ImgFuncs.safeGetColor32 = function(imageData, x, y) {
+	// return imageData.dataView.getUint32(byteOffset * 4);
+	return ImgFuncs_fixEndian(imageData.u32[imageData.safeByteOffset(x,y)]);
+}
+
+// Sets a u32 for an x,y coord.
+ImgFuncs.safeSetColor32 = function(imageData, x, y, color) {
+	// imageData.dataView.setUint32(byteOffset * 4, ((color & 0xffffff00) | 0xff));
+	imageData.u32[imageData.safeByteOffset(x,y)] = ImgFuncs_fixEndian(((color & 0xffffff00) | 0xff));
+}
+
 ImgFuncs.addBufferToImageData = function(imageData) {
 	let u32 = imageData.u32;
 	if (!u32) {
@@ -3395,6 +3396,13 @@ ImgFuncs.addBufferToImageData = function(imageData) {
 				let i = ((~~(x + width * width) % width) + (width * (~~(y + height * height) % height)));
 				return i;
 			}
+		}
+	}
+
+	if (!imageData.safeByteOffset) {
+		const width = ~~imageData.width;
+		imageData.safeByteOffset = function(x, y) {
+			return ~~x + (~~y * width);
 		}
 	}
 
@@ -3523,24 +3531,25 @@ ImgFuncs.HSVToRGB = function(arr) {
 
 // Finds edges in a channel and colors them.
 ImgFuncs.findEdges = function(surface, channel, level, colorArr) {
+	let n = 0, rgb1 = 0;
 	for (let x = 0; x < surface.width; ++x) {
 		for (let y = 0; y < surface.height; ++y) {
-			var n = 0;
-			var rgb1 = ImgFuncs_getColorArr(surface, x, y);
+			n = 0;
+			rgb1 = ImgFuncs_getColorArr(surface, x, y);
 			if (x > 0) {
-				var rgb2 = ImgFuncs_getColorArr(surface, x - 1, y);
+				let rgb2 = ImgFuncs_getColorArr(surface, x - 1, y);
 				if (rgb1[channel] >= level && rgb2[channel] < level) ++n;
 			}
 			if (y > 0) {
-				var rgb2 = ImgFuncs_getColorArr(surface, x, y - 1);
+				let rgb2 = ImgFuncs_getColorArr(surface, x, y - 1);
 				if (rgb1[channel] >= level && rgb2[channel] < level) ++n;
 			}
 			if (x < surface.width - 1) {
-				var rgb2 = ImgFuncs_getColorArr(surface, x + 1, y);
+				let rgb2 = ImgFuncs_getColorArr(surface, x + 1, y);
 				if (rgb1[channel] >= level && rgb2[channel] < level) ++n;
 			}
 			if (y < surface.height - 1) {
-				var rgb2 = ImgFuncs_getColorArr(surface, x, y + 1);
+				let rgb2 = ImgFuncs_getColorArr(surface, x, y + 1);
 				if (rgb1[channel] >= level && rgb2[channel] < level) ++n;
 			}
 			if (n > 0) ImgFuncs_setColorArr(surface, x, y, colorArr);
@@ -3731,43 +3740,43 @@ ImgFuncs.copyData = function(imageData) {
 
 // No fucking clue.
 ImgFuncs.InPlacePyramid = function(to, from, filter) {
-	var size = to.width;
+	let size = to.width;
 
 	function cget(fx, fy, channel) {
-		var point = filter(size, fx, fy);
+		let point = filter(size, fx, fy);
 		return ImgFuncs_getColorArr(from, point.x, point.y)[channel];
 	}
 
 	function cset(fx, fy, nx, ny, channel, color) {
-		var dx = fx * 3 + nx;
-		var dy = fy * 3 + ny;
+		let dx = fx * 3 + nx;
+		let dy = fy * 3 + ny;
 		dx = Math.max(Math.min(size, dx), 0);
 		dy = Math.max(Math.min(size, dy), 0);
-		var ch = ImgFuncs_getColorArr(to, dx, dy)
+		let ch = ImgFuncs_getColorArr(to, dx, dy)
 		ch[channel] = ~~color;
 		ImgFuncs_setColorArr(to, dx, dy, ch);
 	}
-	var count = 0;
+	let count = 0;
 
-	var coord = new Array({ x: 2, y: 2 }, { x: 1, y: 2 }, { x: 3, y: 2 }, { x: 2, y: 1 }, { x: 2, y: 3 }, { x: 1, y: 1 }, { x: 1, y: 3 }, { x: 3, y: 1 }, { x: 3, y: 3 });
-	var max = Math.ceil(size / 3) + 1;
+	let coord = new Array({ x: 2, y: 2 }, { x: 1, y: 2 }, { x: 3, y: 2 }, { x: 2, y: 1 }, { x: 2, y: 3 }, { x: 1, y: 1 }, { x: 1, y: 3 }, { x: 3, y: 1 }, { x: 3, y: 3 });
+	let max = Math.ceil(size / 3) + 1;
 	for (let x = 0; x < max; ++x) {
 		for (let y = 0; y < max; ++y) {
 			for (let c = 0; c < 3; ++c) {
-				var get = cget(x, y, c);
-				var left = cget(x - 1, y, c);
-				var right = cget(x + 1, y, c);
-				var up = cget(x, y - 1, c);
-				var down = cget(x, y + 1, c);
+				let get = cget(x, y, c);
+				let left = cget(x - 1, y, c);
+				let right = cget(x + 1, y, c);
+				let up = cget(x, y - 1, c);
+				let down = cget(x, y + 1, c);
 
-				var newup = (up + get) / 2;
-				var newdown = (down + get) / 2;
-				var newleft = (left + get) / 2;
-				var newright = (right + get) / 2;
+				let newup = (up + get) / 2;
+				let newdown = (down + get) / 2;
+				let newleft = (left + get) / 2;
+				let newright = (right + get) / 2;
 
-				var tab = new Array(get, newleft, newright, newup, newdown, (newup + newleft) / 2, (newdown + newleft) / 2, (newup + newright) / 2, (newdown + newright) / 2);
+				let tab = new Array(get, newleft, newright, newup, newdown, (newup + newleft) / 2, (newdown + newleft) / 2, (newup + newright) / 2, (newdown + newright) / 2);
 				for (let i = 0; i < tab.length; ++i) {
-					var tc = coord[i];
+					let tc = coord[i];
 					cset(x, y, tc.x, tc.y, c, tab[i]);
 				}
 			}
@@ -3807,13 +3816,13 @@ ImgFuncs.textify = function(imageData) {
 	if (!fontData) {
 		return;
 	}
-	var toVisit = {};
+	let toVisit = {};
 
-	var any = 0;
-	var fontSize = 8;
+	let any = 0;
+	let fontSize = 8;
 	for (let x = 0; x < imageData.width; ++x) {
 		for (let y = 0; y < imageData.height; ++y) {
-			var rgb = ImgFuncs_getColorArr(imageData, x, y);
+			let rgb = ImgFuncs_getColorArr(imageData, x, y);
 			if (rgb[0] + rgb[1] + rgb[2] > 224 + 224 + 224) {
 				toVisit[x + y * imageData.width] = true;
 				ImgFuncs_setColor32(imageData, x, y, 0);
@@ -3827,8 +3836,8 @@ ImgFuncs.textify = function(imageData) {
 	for (let x = 0; x < imageData.width; ++x) {
 		for (let y = 0; y < imageData.height; ++y) {
 			if (toVisit[x + y * imageData.width]) {
-				var fx = fontSize * ~~(Math.random() * fontData.width / fontSize);
-				var fy = fontSize * ~~(Math.random() * fontData.height / fontSize);
+				let fx = fontSize * ~~(Math.random() * fontData.width / fontSize);
+				let fy = fontSize * ~~(Math.random() * fontData.height / fontSize);
 				for (let i = 0; i < fontSize; ++i) {
 					for (let j = 0; j < fontSize; ++j) {
 						ImgFuncs_setColor32(imageData, x + i, y + j, ImgFuncs_getColor32(fontData, fx + i, fy + j));
@@ -3868,6 +3877,8 @@ const ImgFuncs_setColorArr = ImgFuncs.setColorArr;
 const ImgFuncs_getColorArr = ImgFuncs.getColorArr;
 const ImgFuncs_setColor32 = ImgFuncs.setColor32;
 const ImgFuncs_getColor32 = ImgFuncs.getColor32;
+const ImgFuncs_safeSetColor32 = ImgFuncs.safeSetColor32;
+const ImgFuncs_safeGetColor32 = ImgFuncs.safeGetColor32;
 
 // An emotion is a object that sets how the auto-artist state
 // will change when using an action. Actions without emotions will
