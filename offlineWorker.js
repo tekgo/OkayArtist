@@ -54,7 +54,7 @@ const fileList = [
 	'./audio/blast-cut-up.mp3',
 ];
 
-const version = 'x18';
+const version = 'x19';
 
 self.addEventListener('install', function(event) {
 	event.waitUntil(
@@ -62,12 +62,15 @@ self.addEventListener('install', function(event) {
 			return cache.addAll(fileList);
 		})
 	);
+	self.skipWaiting();
 });
 
 self.addEventListener('fetch', function(event) {
 	event.respondWith(
-		caches.match(event.request).then(function(response) {
-			return response || fetch(event.request);
+		caches.open(version).then(function(cache) {
+			return cache.match(event.request, { ignoreSearch: true }).then(function(response) {
+				return response || fetch(event.request);
+			})
 		})
 	);
 });

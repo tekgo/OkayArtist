@@ -2155,6 +2155,15 @@ Artsy.actions.SDL_SCANCODE_MINUS = {
 	}
 }
 
+Artsy.actions.SDL_SCANCODE_MINUS_Firefox = {
+	name: "SDL_SCANCODE_MINUS_Firefox",
+	affectsCanvas: true,
+	pressCode: 173, // MINUS
+	action: function(state) {
+		return Artsy.actions.SDL_SCANCODE_MINUS.action(state);
+	}
+}
+
 Artsy.actions.SDL_SCANCODE_UP = {
 	name: "SDL_SCANCODE_UP",
 	affectsCanvas: true,
