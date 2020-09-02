@@ -170,7 +170,7 @@ function getUrlParameter(name) {
 };
 
 Artsy.constants = {
-	defaultSize: (getUrlParameter("defaultSize") || 128),
+	defaultSize: ~~(Number(getUrlParameter("defaultSize")) || 128),
 	useCanvasPoints: (getUrlParameter("multitouch") || 1),
 	canPlayContinuous: (getUrlParameter("continuous") || 1),
 	midi: (getUrlParameter("midi") || 0),
