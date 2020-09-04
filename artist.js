@@ -274,6 +274,8 @@ Artsy.start = function() {
 
 	document.addEventListener("keydown", Input.keyDownHandler, false);
 	document.addEventListener("keyup", Input.keyUpHandler, false);
+	window.addEventListener("blur", Input.wipe, false);
+	window.addEventListener("focus", Input.wipe, false);
 	main.addEventListener("touchstart", Input.touchMoveHandler, false);
 	main.addEventListener("touchstart", Sounder.enableSounds, false);
 	main.addEventListener("touchend", Input.touchMoveHandler, false);
@@ -352,6 +354,11 @@ Artsy.readfiles = function(files, similar, state) {
 }
 
 Artsy.performActionsForState = function(state) {
+	// Ignore if there is currently a meta-key combo.
+	if (Input.modifiers.some( key => state.keyStates[key] == true )) {
+		return state;
+	}
+
 	var actions = Artsy.allActions;
 	for (let i = 0; i < actions.length; ++i) {
 		var action = actions[i];
@@ -612,8 +619,14 @@ var Input = {
 	mousePoint: { x: 0, y: 0 },
 	gamepads: new Array(),
 	targets: {},
-	touchIDs: []
+	touchIDs: [],
+	modifiers: [16,17,18,91,93,224], // Shift, option/alt, control, meta, metaRight
 };
+
+Input.wipe = function(e) {
+	Players.keyboard.pressStates = {};
+	Players.keyboard.keyStates = {};
+}
 
 Input.keyDownHandler = function(e) {
 	Sounder.enableSounds();
@@ -629,7 +642,8 @@ Input.keyDownHandler = function(e) {
 		Artsy.state.touches = [];
 		Artsy.state.canvasNeedsUpdate = true;
 	} else {
-		if (Artsy.state.fran) {
+		// Disable autoArtist if any key is pressed thats not part of a key combo;
+		if (Artsy.state.fran && Input.modifiers.indexOf(keyCode) == -1 && Input.modifiers.every(key => !Players.keyboard.keyStates[key]) ) {
 			Artsy.state.fran = false;
 			Players.autoArtist.pressStates = {};
 			Players.autoArtist.keyStates = {};
