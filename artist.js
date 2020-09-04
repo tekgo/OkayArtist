@@ -647,6 +647,7 @@ Input.keyDownHandler = function(e) {
 			Artsy.state.fran = false;
 			Players.autoArtist.pressStates = {};
 			Players.autoArtist.keyStates = {};
+			Players.keyboard.pressStates = {};
 			Artsy.state.canvasNeedsUpdate = true;
 		}
 		if (!Players.keyboard.keyStates[keyCode]) {
@@ -664,7 +665,7 @@ Input.keyDownHandler = function(e) {
 		var action = actions[i];
 		var combo = action["keyCombo"];
 		if (combo && combo.length > 0) {
-			if (combo.every(key => Artsy.state.keyStates[key] == true) && combo.some(key => Artsy.state.pressStates[key] == true)) {
+			if (combo.every(key => Players.keyboard.keyStates[key] == true) && combo.some(key => Players.keyboard.pressStates[key] == true)) {
 				Artsy.state = action.action(Artsy.state);
 				Artsy.state.canvasNeedsUpdate = true;
 			}
