@@ -54,7 +54,7 @@ const fileList = [
 	'./audio/blast-cut-up.mp3',
 ];
 
-const version = 'x21';
+const version = 'x23';
 
 self.addEventListener('install', function(event) {
 	event.waitUntil(

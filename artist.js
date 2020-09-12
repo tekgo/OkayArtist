@@ -162,19 +162,28 @@ var Artsy = {};
 
 /* Constants */
 
-function getUrlParameter(name) {
+function getUrlParameter(name, defaultValue, isNumber) {
     name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
     var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
     var results = regex.exec(location.search);
-    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    if (results === null) {
+    	return defaultValue;
+    }
+    var resultString = decodeURIComponent(results[1].replace(/\+/g, ' '));
+    if (isNumber) {
+    	var numeric = Number(resultString);
+    	return isNaN(numeric) ? defaultValue : numeric;
+    }
+    return resultString;
 };
 
 Artsy.constants = {
-	defaultSize: ~~(Number(getUrlParameter("defaultSize")) || 128),
-	useCanvasPoints: (getUrlParameter("multitouch") || 1),
-	canPlayContinuous: (getUrlParameter("continuous") || 1),
-	midi: (getUrlParameter("midi") || 0),
-	gamepad: (getUrlParameter("gamepad") || 0),
+	defaultSize: ~~(getUrlParameter("defaultSize", 128, true)),
+	useCanvasPoints: (getUrlParameter("multitouch", 1, true)),
+	canPlayContinuous: (getUrlParameter("continuous", 1, true)),
+	midi: (getUrlParameter("midi", 0, true)),
+	gamepad: (getUrlParameter("gamepad", 0, true)),
+	gif: (getUrlParameter("gif", 1, true)),
 }
 
 /* Properties */
@@ -233,6 +242,9 @@ Artsy.historyTicks = 0;
 Artsy.tickHistory = 1;
 Artsy.maxHistory = 50;
 Artsy.addToHistory = function(imageData) {
+	if (!Artsy.constants.gif) {
+		return;
+	}
 	if (Artsy.history.length >= Artsy.maxHistory) {
 		var newHistory = [];
 		for (let i = 1; i < Artsy.history.length; i += 2) {
@@ -539,7 +551,9 @@ Artsy.update = function() {
 		}
 
 		Artsy.state.newLockedRegions = [];
-		Artsy.addToHistory(ImgFuncs.copyData(Artsy.state.imageData));
+		if (Artsy.constants.gif) {
+			Artsy.addToHistory(ImgFuncs.copyData(Artsy.state.imageData));
+		}
 	}
 
 	// Color the keys yellow if a key is being pressed.
@@ -1243,6 +1257,9 @@ var Gallery = {
 };
 
 Gallery.saveImageGroup = function(images) {
+	if (!Artsy.constants.gif) {
+		return;
+	}
 	var gif = new GIF({
 		workers: 2,
 		quality: 30
