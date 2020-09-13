@@ -1333,14 +1333,23 @@ Gallery.getSavedImages = function() {
 	return [];
 }
 
+Gallery.hideGallery = function() {
+	let currentGallery = document.getElementById("gallery")
+	if (currentGallery) {
+		currentGallery.remove();
+	}
+}
+
 // Displays all saved images. Does not display if there are no saved images.
-Gallery.displayGallery = function(force = false) {
+Gallery.displayGallery = function(update = false) {
 	var currentGallery = document.getElementById("gallery")
 	if (currentGallery) {
 		currentGallery.remove();
-		if (force == false) {
+		if (update == false) {
 			return;
 		}
+	} else if (update == true) {
+		return;
 	}
 	var images = Gallery.getSavedImages();
 
@@ -1349,7 +1358,7 @@ Gallery.displayGallery = function(force = false) {
 	var close = document.createElement("div");
 	close.className = "option";
 	close.innerHTML = "X";
-	close.onclick = function() { Gallery.displayGallery() };
+	close.onclick = function() { Gallery.hideGallery() };
 	newGallery.appendChild(close);
 
 	var native = false;
@@ -1391,7 +1400,7 @@ Gallery.displayGallery = function(force = false) {
 				cloneTag.innerHTML = "<img src=\"clone.png\">"
 				cloneTag.className = "cloneButton";
 				cloneTag.onclick = function() {
-					Gallery.displayGallery();
+					Gallery.hideGallery();
 					let data = ImgFuncs.fromImage(img);
 					ImgFuncs.addBufferToImageData(data);
 					Artsy.state.imageData = data;
@@ -3200,6 +3209,11 @@ Sounder.lastSound = null;
 Sounder.soundsLoaded = 0;
 
 Sounder.enableSounds = function() {
+	if (!Sounder.audioContext) {
+		Sounder.soundsLoaded = 0;
+		Sounder.sounds = [];
+		Sounder.audioContext = new AudioContext();
+	}
 	// Load and play a blank sound to enable sound in safari
 	if (Sounder.audioContext.state == "suspended") {
 		Sounder.soundsLoaded = 0;
@@ -3219,6 +3233,10 @@ Sounder.enableSounds = function() {
 }
 
 Sounder.loadSound = function(soundName, callBack) {
+	if (!Sounder.audioContext) {
+		Sounder.audioContext = new AudioContext();
+		return;
+	}
 	if (Sounder.sounds[soundName]) {
 		callBack(Sounder.sounds[soundName]);
 		return;
