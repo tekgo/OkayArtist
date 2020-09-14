@@ -184,6 +184,7 @@ Artsy.constants = {
 	midi: (getUrlParameter("midi", 0, true)),
 	gamepad: (getUrlParameter("gamepad", 0, true)),
 	gif: (getUrlParameter("gif", 1, true)),
+	brushSize: (getUrlParameter("brushSize", 1, true)),
 }
 
 /* Properties */
@@ -194,7 +195,7 @@ Artsy.keyboard = null;
 Artsy.createState = function(options = {}) {
 	const defaultOptions = {
 		size: Artsy.constants.defaultSize,
-		brushSizeMultiplier: 1,
+		brushSizeMultiplier: Artsy.constants.brushSize,
 	}
 
 	const theOptions = Object.assign(defaultOptions, options);

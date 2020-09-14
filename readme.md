@@ -13,8 +13,10 @@ More info about 'BECOME A GREAT ARTIST IN JUST 10 SECONDS' can be found at: http
 The following query parameters can be set as query parameters to enable or change functionality. In the format `?<param>=<value>&<otherParam>=<otherValue>` 
 
 - **defaultSize**: will set the size of the canvas, defaults to 128.
+- **brushSize**: a multiplier for the default brush size, defaults to 1. Useful with `defaultSize`.
 - **midi**: if set to any non-zero value will enable midi support, defaults to 0.
 - **gamepad**: if set to any non-zero value it will enable gamepad support, defaults to 0.
+- **gif**: if set to any non-zero value it will enable gif support, defaults to 1.
 
 # License
 
