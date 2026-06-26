@@ -377,16 +377,17 @@ Artsy.performActionsForState = function(state) {
 		var action = actions[i];
 		var keyCode = action["keycode"];
 		if (keyCode > 0) {
-			if (state.keyStates[keyCode] == true) {
-				state = action.action(state);
-				state.canvasNeedsUpdate = true;
-			}
-		}
-		var keyCode = action["pressCode"];
-		if (keyCode > 0) {
-			if (state.pressStates[keyCode] == true) {
-				state = action.action(state);
-				state.canvasNeedsUpdate = true;
+			if (action.isPress) {
+				if (state.pressStates[keyCode] == true) {
+					state = action.action(state);
+					state.canvasNeedsUpdate = true;
+				}
+
+			} else {
+				if (state.keyStates[keyCode] == true) {
+					state = action.action(state);
+					state.canvasNeedsUpdate = true;
+				}
 			}
 		}
 	}
@@ -2092,7 +2093,8 @@ Artsy.actions.circle_thing = {
 Artsy.actions.SDL_SCANCODE_X = {
 	name: "SDL_SCANCODE_X",
 	affectsCanvas: false,
-	pressCode: 88, // X
+	isPress: true,
+	keycode: 88, // X
 	// emotion: new Emotion(88,0,0,0,0,0),
 	action: function(state) {
 		state.blip = !state.blip
@@ -2104,7 +2106,8 @@ Artsy.actions.SDL_SCANCODE_X = {
 Artsy.actions.SDL_SCANCODE_V = {
 	name: "SDL_SCANCODE_V",
 	affectsCanvas: true,
-	pressCode: 86, // V
+	isPress: true,
+	keycode: 86, // V
 	emotion: new Emotion(86, 0, 0, 0, 0, 0),
 	action: function(state) {
 		ImgFuncs.textify(state.imageData);
@@ -2116,7 +2119,8 @@ Artsy.actions.SDL_SCANCODE_V = {
 Artsy.actions.SDL_SCANCODE_S = {
 	name: "SDL_SCANCODE_S",
 	affectsCanvas: true,
-	pressCode: 83, // S
+	isPress: true,
+	keycode: 83, // S
 	emotion: new Emotion(83, 0, 0, 0, 0, 0),
 	action: function(state) {
 		ImgFuncs.flipline(state.imageData, state.brushPoint.x, state.brushPoint.y)
@@ -2131,7 +2135,8 @@ Artsy.actions.SDL_SCANCODE_S = {
 Artsy.actions.SDL_SCANCODE_H = {
 	name: "SDL_SCANCODE_H",
 	affectsCanvas: true,
-	pressCode: 72, // H
+	isPress: true,
+	keycode: 72, // H
 	emotion: new Emotion(72, 20, 0, 20, 0, 0),
 	action: function(state) {
 		let copy = ImgFuncs.copyData(state.imageData);
@@ -2148,7 +2153,8 @@ Artsy.actions.SDL_SCANCODE_H = {
 Artsy.actions.SDL_SCANCODE_J = {
 	name: "SDL_SCANCODE_J",
 	affectsCanvas: true,
-	pressCode: 74, // J
+	isPress: true,
+	keycode: 74, // J
 	emotion: new Emotion(74, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var assign = new Array();
@@ -2182,7 +2188,8 @@ Artsy.actions.SDL_SCANCODE_J = {
 Artsy.actions.SDL_SCANCODE_MINUS = {
 	name: "SDL_SCANCODE_MINUS",
 	affectsCanvas: false,
-	pressCode: 189, // MINUS
+	isPress: true,
+	keycode: 189, // MINUS
 	emotion: new Emotion(189, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var subdiv = 4;
@@ -2200,7 +2207,8 @@ Artsy.actions.SDL_SCANCODE_MINUS = {
 Artsy.actions.SDL_SCANCODE_MINUS_Firefox = {
 	name: "SDL_SCANCODE_MINUS_Firefox",
 	affectsCanvas: true,
-	pressCode: 173, // MINUS
+	isPress: true,
+	keycode: 173, // MINUS
 	action: function(state) {
 		return Artsy.actions.SDL_SCANCODE_MINUS.action(state);
 	}
@@ -2209,7 +2217,8 @@ Artsy.actions.SDL_SCANCODE_MINUS_Firefox = {
 Artsy.actions.SDL_SCANCODE_UP = {
 	name: "SDL_SCANCODE_UP",
 	affectsCanvas: true,
-	pressCode: 38, // 
+	isPress: true,
+	keycode: 38, // 
 	emotion: new Emotion(38, 20, 20, 0, 0, 0),
 	action: function(state) {
 		var copy = ImgFuncs.copyData(state.imageData);
@@ -2226,7 +2235,8 @@ Artsy.actions.SDL_SCANCODE_UP = {
 Artsy.actions.SDL_SCANCODE_DOWN = {
 	name: "SDL_SCANCODE_DOWN",
 	affectsCanvas: true,
-	pressCode: 40, // 
+	isPress: true,
+	keycode: 40, // 
 	emotion: new Emotion(40, 0, 0, 0, 0, 0),
 	action: function(state) {
 		function localFilter(i, s) {
@@ -2247,7 +2257,8 @@ Artsy.actions.SDL_SCANCODE_DOWN = {
 Artsy.actions.SDL_SCANCODE_LEFT = {
 	name: "SDL_SCANCODE_LEFT",
 	affectsCanvas: true,
-	pressCode: 37, // 
+	isPress: true,
+	keycode: 37, // 
 	emotion: new Emotion(37, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var copy = ImgFuncs.copyData(state.imageData);
@@ -2265,7 +2276,8 @@ Artsy.actions.SDL_SCANCODE_LEFT = {
 Artsy.actions.SDL_SCANCODE_RIGHT = {
 	name: "SDL_SCANCODE_RIGHT",
 	affectsCanvas: true,
-	pressCode: 39, // 
+	isPress: true,
+	keycode: 39, // 
 	emotion: new Emotion(39, 0, 0, 0, 0, 0),
 	action: function(state) {
 		var copy = ImgFuncs.copyData(state.imageData);
@@ -2285,7 +2297,8 @@ Artsy.actions.SDL_SCANCODE_RIGHT = {
 Artsy.actions.SDL_SCANCODE_RETURN = {
 	name: "SDL_SCANCODE_RETURN",
 	affectsCanvas: false,
-	pressCode: 13, // 
+	isPress: true,
+	keycode: 13, // 
 	action: function(state) {
 		Gallery.saveImageData(state.imageData);
 		var imageGroup = Artsy.history.slice();
@@ -2301,7 +2314,8 @@ Artsy.actions.SDL_SCANCODE_RETURN = {
 Artsy.actions.Gallery = {
 	name: "Gallery",
 	affectsCanvas: false,
-	pressCode: 220, // '\'
+	isPress: true,
+	keycode: 220, // '\'
 	action: function(state) {
 		Gallery.displayGallery();
 		state.keyStates = {};
@@ -2316,7 +2330,8 @@ Artsy.actions.Gallery = {
 Artsy.actions.Reset = {
 	name: "Reset",
 	affectsCanvas: true,
-	pressCode: 27, // 'esc'
+	isPress: true,
+	keycode: 27, // 'esc'
 	action: function(state) {
 		state = LevelFuncs.generateLevel(state);
 		// Play a random sound.
@@ -2343,7 +2358,8 @@ Artsy.actions.Reset = {
 Artsy.actions.SDL_SCANCODE_1 = {
 	name: "SDL_SCANCODE_1",
 	affectsCanvas: false,
-	pressCode: 49, // 
+	isPress: true,
+	keycode: 49, // 
 	emotion: new Emotion(49, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 1;
@@ -2355,7 +2371,8 @@ Artsy.actions.SDL_SCANCODE_1 = {
 Artsy.actions.SDL_SCANCODE_2 = {
 	name: "SDL_SCANCODE_2",
 	affectsCanvas: false,
-	pressCode: 50, // 
+	isPress: true,
+	keycode: 50, // 
 	emotion: new Emotion(50, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 2;
@@ -2367,7 +2384,8 @@ Artsy.actions.SDL_SCANCODE_2 = {
 Artsy.actions.SDL_SCANCODE_3 = {
 	name: "SDL_SCANCODE_3",
 	affectsCanvas: false,
-	pressCode: 51, // 
+	isPress: true,
+	keycode: 51, // 
 	emotion: new Emotion(51, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 3;
@@ -2379,7 +2397,8 @@ Artsy.actions.SDL_SCANCODE_3 = {
 Artsy.actions.SDL_SCANCODE_4 = {
 	name: "SDL_SCANCODE_4",
 	affectsCanvas: false,
-	pressCode: 52, // 
+	isPress: true,
+	keycode: 52, // 
 	emotion: new Emotion(52, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 4;
@@ -2391,7 +2410,8 @@ Artsy.actions.SDL_SCANCODE_4 = {
 Artsy.actions.SDL_SCANCODE_5 = {
 	name: "SDL_SCANCODE_5",
 	affectsCanvas: false,
-	pressCode: 53, // 
+	isPress: true,
+	keycode: 53, // 
 	emotion: new Emotion(53, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 5;
@@ -2403,7 +2423,8 @@ Artsy.actions.SDL_SCANCODE_5 = {
 Artsy.actions.SDL_SCANCODE_6 = {
 	name: "SDL_SCANCODE_6",
 	affectsCanvas: false,
-	pressCode: 54, // 
+	isPress: true,
+	keycode: 54, // 
 	emotion: new Emotion(54, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 6;
@@ -2415,7 +2436,8 @@ Artsy.actions.SDL_SCANCODE_6 = {
 Artsy.actions.SDL_SCANCODE_7 = {
 	name: "SDL_SCANCODE_7",
 	affectsCanvas: false,
-	pressCode: 55, // 
+	isPress: true,
+	keycode: 55, // 
 	emotion: new Emotion(55, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 7;
@@ -2427,7 +2449,8 @@ Artsy.actions.SDL_SCANCODE_7 = {
 Artsy.actions.SDL_SCANCODE_8 = {
 	name: "SDL_SCANCODE_8",
 	affectsCanvas: false,
-	pressCode: 56, // 
+	isPress: true,
+	keycode: 56, // 
 	emotion: new Emotion(56, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 8;
@@ -2439,7 +2462,8 @@ Artsy.actions.SDL_SCANCODE_8 = {
 Artsy.actions.SDL_SCANCODE_9 = {
 	name: "SDL_SCANCODE_9",
 	affectsCanvas: false,
-	pressCode: 57, // 
+	isPress: true,
+	keycode: 57, // 
 	emotion: new Emotion(57, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 9;
@@ -2451,7 +2475,8 @@ Artsy.actions.SDL_SCANCODE_9 = {
 Artsy.actions.SDL_SCANCODE_0 = {
 	name: "SDL_SCANCODE_0",
 	affectsCanvas: false,
-	pressCode: 48, // 
+	isPress: true,
+	keycode: 48, // 
 	emotion: new Emotion(48, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushType = 0;
@@ -2463,7 +2488,8 @@ Artsy.actions.SDL_SCANCODE_0 = {
 Artsy.actions.SDL_SCANCODE_F1 = {
 	name: "SDL_SCANCODE_F1",
 	affectsCanvas: false,
-	pressCode: 112, // 
+	isPress: true,
+	keycode: 112, // 
 	emotion: new Emotion(112, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 1 * state.brushSizeMultiplier;
@@ -2475,7 +2501,8 @@ Artsy.actions.SDL_SCANCODE_F1 = {
 Artsy.actions.SDL_SCANCODE_F2 = {
 	name: "SDL_SCANCODE_F2",
 	affectsCanvas: false,
-	pressCode: 113, // 
+	isPress: true,
+	keycode: 113, // 
 	emotion: new Emotion(113, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 2 * state.brushSizeMultiplier;
@@ -2487,7 +2514,8 @@ Artsy.actions.SDL_SCANCODE_F2 = {
 Artsy.actions.SDL_SCANCODE_F3 = {
 	name: "SDL_SCANCODE_F3",
 	affectsCanvas: false,
-	pressCode: 114, // 
+	isPress: true,
+	keycode: 114, // 
 	emotion: new Emotion(114, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 4 * state.brushSizeMultiplier;
@@ -2499,7 +2527,8 @@ Artsy.actions.SDL_SCANCODE_F3 = {
 Artsy.actions.SDL_SCANCODE_F4 = {
 	name: "SDL_SCANCODE_F4",
 	affectsCanvas: false,
-	pressCode: 115, // 
+	isPress: true,
+	keycode: 115, // 
 	emotion: new Emotion(115, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 8 * state.brushSizeMultiplier;
@@ -2511,7 +2540,8 @@ Artsy.actions.SDL_SCANCODE_F4 = {
 Artsy.actions.SDL_SCANCODE_F5 = {
 	name: "SDL_SCANCODE_F5",
 	affectsCanvas: false,
-	pressCode: 116, // 
+	isPress: true,
+	keycode: 116, // 
 	emotion: new Emotion(116, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 16 * state.brushSizeMultiplier;
@@ -2523,7 +2553,8 @@ Artsy.actions.SDL_SCANCODE_F5 = {
 Artsy.actions.SDL_SCANCODE_F6 = {
 	name: "SDL_SCANCODE_F6",
 	affectsCanvas: false,
-	pressCode: 117, // 
+	isPress: true,
+	keycode: 117, // 
 	emotion: new Emotion(117, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 24 * state.brushSizeMultiplier;
@@ -2535,7 +2566,8 @@ Artsy.actions.SDL_SCANCODE_F6 = {
 Artsy.actions.SDL_SCANCODE_F7 = {
 	name: "SDL_SCANCODE_F7",
 	affectsCanvas: false,
-	pressCode: 118, // 
+	isPress: true,
+	keycode: 118, // 
 	emotion: new Emotion(118, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 32 * state.brushSizeMultiplier;
@@ -2547,7 +2579,8 @@ Artsy.actions.SDL_SCANCODE_F7 = {
 Artsy.actions.SDL_SCANCODE_F8 = {
 	name: "SDL_SCANCODE_F8",
 	affectsCanvas: false,
-	pressCode: 119, // 
+	isPress: true,
+	keycode: 119, // 
 	emotion: new Emotion(119, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 48;
@@ -2559,7 +2592,8 @@ Artsy.actions.SDL_SCANCODE_F8 = {
 Artsy.actions.SDL_SCANCODE_F9 = {
 	name: "SDL_SCANCODE_F9",
 	affectsCanvas: false,
-	pressCode: 120, // 
+	isPress: true,
+	keycode: 120, // 
 	emotion: new Emotion(120, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 56 * state.brushSizeMultiplier;
@@ -2571,7 +2605,8 @@ Artsy.actions.SDL_SCANCODE_F9 = {
 Artsy.actions.SDL_SCANCODE_F10 = {
 	name: "SDL_SCANCODE_F10",
 	affectsCanvas: false,
-	pressCode: 121, // 
+	isPress: true,
+	keycode: 121, // 
 	emotion: new Emotion(121, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 64 * state.brushSizeMultiplier;
@@ -2583,7 +2618,8 @@ Artsy.actions.SDL_SCANCODE_F10 = {
 Artsy.actions.SDL_SCANCODE_F11 = {
 	name: "SDL_SCANCODE_F11",
 	affectsCanvas: false,
-	pressCode: 122, // 
+	isPress: true,
+	keycode: 122, // 
 	emotion: new Emotion(122, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 96 * state.brushSizeMultiplier;
@@ -2595,7 +2631,8 @@ Artsy.actions.SDL_SCANCODE_F11 = {
 Artsy.actions.SDL_SCANCODE_F12 = {
 	name: "SDL_SCANCODE_F12",
 	affectsCanvas: false,
-	pressCode: 123, // 
+	isPress: true,
+	keycode: 123, // 
 	emotion: new Emotion(123, 0, 0, 0, 0, 0),
 	action: function(state) {
 		state.brushSize = 128 * state.brushSizeMultiplier;
@@ -2607,7 +2644,8 @@ Artsy.actions.SDL_SCANCODE_F12 = {
 Artsy.actions.SDL_SCANCODE_DELETE = {
 	name: "SDL_SCANCODE_DELETE",
 	affectsCanvas: true,
-	pressCode: 8, // 
+	isPress: true,
+	keycode: 8, // 
 	action: function(state) {
 		// Undo
 		var saveState = state.saveState;
@@ -2623,7 +2661,8 @@ Artsy.actions.SDL_SCANCODE_DELETE = {
 Artsy.actions.SDL_SCANCODE_BACKSPACE = {
 	name: "SDL_SCANCODE_BACKSPACE",
 	affectsCanvas: true,
-	pressCode: 46, // 
+	isPress: true,
+	keycode: 46, // 
 	action: function(state) {
 		// Undo
 		return Artsy.actions.SDL_SCANCODE_DELETE.action(state);
@@ -2633,7 +2672,8 @@ Artsy.actions.SDL_SCANCODE_BACKSPACE = {
 Artsy.actions.SDL_SCANCODE_EQUALS = {
 	name: "SDL_SCANCODE_EQUALS",
 	affectsCanvas: true,
-	pressCode: 187, // 
+	isPress: true,
+	keycode: 187, // 
 	action: function(state) {
 		Sounder.playSound("sfx_7")
 		return Artsy.actions.SNAP.action(state);
