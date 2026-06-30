@@ -99,6 +99,18 @@ function TouchKey(keyCode, x, y, w, h) {
 
 let scanCodeDuplicateMatching = {
 	"Delete": "Backspace",
+	"AltRight": "AltLeft",
+	"Numpad0": "Digit0",
+	"Numpad1": "Digit1",
+	"Numpad2": "Digit2",
+	"Numpad3": "Digit3",
+	"Numpad4": "Digit4",
+	"Numpad5": "Digit5",
+	"Numpad6": "Digit6",
+	"Numpad7": "Digit7",
+	"Numpad8": "Digit8",
+	"Numpad9": "Digit9",
+	"NumpadSubtract": "Minus"
 }
 
 let keyCodeToScanCodeMap = {
@@ -814,7 +826,7 @@ Input.wipe = function(e) {
 
 Input.keyDownHandler = function(e) {
 	Sounder.enableSounds();
-	var keyCode = e.code
+	var keyCode = scanCodeDuplicateMatching[e.code] || e.code;
 
 	if (keyCode == "Backquote") { // Tilde
 		Input.mouseCancel();
@@ -859,7 +871,7 @@ Input.keyDownHandler = function(e) {
 }
 
 Input.keyUpHandler = function(e) {
-	var keyCode = e.code;
+	var keyCode = scanCodeDuplicateMatching[e.code] || e.code;
 	Players.keyboard.keyStates[keyCode] = false;
 
 	// iPad bluetooth keyboards emit only keyCode 0 for keyup.
