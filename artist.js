@@ -245,7 +245,7 @@ let keyCodeToScanCodeMap = {
 	190:	"Period",
 	191:	"Slash",
 	192:	"Backquote",
-	192:	"IntlBackslash",
+	// 192:	"IntlBackslash",
 	193:	"IntlRo",
 	194:	"NumpadComma",
 	219:	"BracketLeft",
@@ -472,6 +472,7 @@ Artsy.start = function() {
 	}
 
 	Artsy.allActions = Artsy.findAllActions();
+	Artsy.allActions.forEach((action) => action.code = keyCodeToScanCodeMap[action["keycode"]]);
 	Artsy.update();
 
 	Artsy.canvas.ondragover = function() { this.className = 'hover'; return false; };
@@ -543,14 +544,13 @@ Artsy.performActionsForState = function(state) {
 	var actions = Artsy.allActions;
 	for (let i = 0; i < actions.length; ++i) {
 		var action = actions[i];
-		var keyCode = action["keycode"];
-		if (keyCode > 0) {
+		var keyCode = action["code"];
+		if (keyCode) {
 			if (action.isPress) {
 				if (state.pressStates[keyCode] == true) {
 					state = action.action(state);
 					state.canvasNeedsUpdate = true;
 				}
-
 			} else {
 				if (state.keyStates[keyCode] == true) {
 					state = action.action(state);
@@ -738,7 +738,7 @@ Artsy.update = function() {
 
 		for (let i = 0; i < touchKeys.length; ++i) {
 			var touchKey = touchKeys[i]
-			if (Artsy.state.keyStates[touchKey.keyCode] || Artsy.state.pressStates[touchKey.keyCode]) {
+			if (Artsy.state.keyStates[touchKey.code] || Artsy.state.pressStates[touchKey.code]) {
 				btx.fillRect(Artsy.keyboard.width * touchKey.origin.x, Artsy.keyboard.height * touchKey.origin.y, Artsy.keyboard.width * touchKey.size.width, Artsy.keyboard.height * touchKey.size.height);
 			}
 
@@ -814,9 +814,9 @@ Input.wipe = function(e) {
 
 Input.keyDownHandler = function(e) {
 	Sounder.enableSounds();
-	var keyCode = scanCodeToKeyCodeMap[e.code];
+	var keyCode = e.code
 
-	if (keyCode == 192) { // Tilde
+	if (keyCode == "Backquote") { // Tilde
 		Input.mouseCancel();
 		Players.keyboard.pressStates = {};
 		Players.keyboard.keyStates = {};
@@ -849,16 +849,17 @@ Input.keyDownHandler = function(e) {
 		var action = actions[i];
 		var combo = action["keyCombo"];
 		if (combo && combo.length > 0) {
-			if (combo.every(key => Players.keyboard.keyStates[key] == true) && combo.some(key => Players.keyboard.pressStates[key] == true)) {
+			if (combo.every(key => Players.keyboard.keyStates[keyCodeToScanCodeMap[key]] == true) && combo.some(key => Players.keyboard.pressStates[keyCodeToScanCodeMap[key]] == true)) {
 				Artsy.state = action.action(Artsy.state);
 				Artsy.state.canvasNeedsUpdate = true;
+				Players.keyboard.keyStates = {};
 			}
 		}
 	}
 }
 
 Input.keyUpHandler = function(e) {
-	var keyCode = scanCodeToKeyCodeMap[e.code];
+	var keyCode = e.code;
 	Players.keyboard.keyStates[keyCode] = false;
 
 	// iPad bluetooth keyboards emit only keyCode 0 for keyup.
@@ -1098,7 +1099,7 @@ Input.gamepadConnected = function(event) {
 	var gamepadPlayer = new Player();
 	gamepadPlayer.gamepad = gamepad;
 	gamepadPlayer.gamepadState = new GamepadState();
-	gamepadPlayer.currentTool = Input.randomTool;
+	gamepadPlayer.currentTool = Input.randomTool();
 	var newBrush = Input.randomBrush();
 	gamepadPlayer.brushType = newBrush.brushType;
 	gamepadPlayer.brushSize = newBrush.brushSize;
@@ -1204,7 +1205,7 @@ Input.processMidiEvent = function(event) {
 /* Input loop */
 
 Input.randomTool = function() {
-	var tools = [87, 69, 82, 84, 89, 85, 73, 79, 80, 65, 68, 70, 72, 74, 75, 76, 86, 66, 77, 189, 38, 40, 37, 39, 32];
+	var tools = [87, 69, 82, 84, 89, 85, 73, 79, 80, 65, 68, 70, 72, 74, 75, 76, 86, 66, 77, 189, 38, 40, 37, 39, 32].map(tool => keyCodeToScanCodeMap[tool] );
 
 	return tools[Math.floor(Math.random() * tools.length)];
 }
@@ -1291,23 +1292,23 @@ Input.updateGamepads = function() {
 		}
 
 		if (newState.up != oldState.up) {
-			gamepadPlayer.keyStates[81] = newState.up;
-			gamepadPlayer.pressStates[81] = newState.up;
+			gamepadPlayer.keyStates[keyCodeToScanCodeMap[81]] = newState.up;
+			gamepadPlayer.pressStates[keyCodeToScanCodeMap[81]] = newState.up;
 			changed = true;
 		}
 		if (newState.down != oldState.down) {
-			gamepadPlayer.keyStates[78] = newState.down;
-			gamepadPlayer.pressStates[78] = newState.down;
+			gamepadPlayer.keyStates[keyCodeToScanCodeMap[78]] = newState.down;
+			gamepadPlayer.pressStates[keyCodeToScanCodeMap[78]] = newState.down;
 			changed = true;
 		}
 		if (newState.left != oldState.left) {
-			gamepadPlayer.keyStates[90] = newState.left;
-			gamepadPlayer.pressStates[90] = newState.left;
+			gamepadPlayer.keyStates[keyCodeToScanCodeMap[90]] = newState.left;
+			gamepadPlayer.pressStates[keyCodeToScanCodeMap[90]] = newState.left;
 			changed = true;
 		}
 		if (newState.right != oldState.right) {
-			gamepadPlayer.keyStates[67] = newState.right;
-			gamepadPlayer.pressStates[67] = newState.right;
+			gamepadPlayer.keyStates[keyCodeToScanCodeMap[67]] = newState.right;
+			gamepadPlayer.pressStates[keyCodeToScanCodeMap[67]] = newState.right;
 			changed = true;
 		}
 
@@ -1405,8 +1406,9 @@ Input.updateMIDI = function() {
 				var action = channelDict[key];
 				if (!!action) {
 					if (action.type == "keypress") {
-						Players.midi.keyStates[key] = value;
-						Players.midi.pressStates[key] = value;
+						let code = keyCodeToScanCodeMap[action.value];
+						Players.midi.keyStates[code] = value;
+						Players.midi.pressStates[code] = value;
 						changed = true;
 					}
 				}
@@ -4152,7 +4154,7 @@ const ImgFuncs_safeGetColor32 = ImgFuncs.safeGetColor32;
 // will change when using an action. Actions without emotions will
 // not be used, actions with all-zero emotions will be randomized.
 function Emotion(keycode, joy, fear, disgust, anger, sadness) {
-	this.keycode = keycode;
+	this.keycode = keyCodeToScanCodeMap[keycode];
 	if ((joy == 0) && (fear == 0) && (disgust == 0) && (anger == 0) && (sadness == 0)) {
 		var max = 51;
 		var half = 25;
