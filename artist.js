@@ -124,7 +124,7 @@ let keyCodeToScanCodeMap = {
 	17:	"ControlLeft",
 	17:	"ControlRight",
 	18:	"AltLeft",
-	18:	"AltRight",
+	// 18:	"AltRight",
 	19:	"Pause",
 	20:	"CapsLock",
 	21:	"Lang1",
