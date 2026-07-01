@@ -6,7 +6,9 @@ It can be played at http://tekgo.github.io/OkayArtist/
 
 If you notice any bugs or it doesn't work correctly on your device please open up an issue or email pat@tekgo.org
 
-More info about 'BECOME A GREAT ARTIST IN JUST 10 SECONDS' can be found at: https://bitbucket.org/runhello/ufo http://ludumdare.com/compo/ludum-dare-27/?action=preview&uid=4987 https://msm.runhello.com/p/987
+The full native version of 'BECOME A GREAT ARTIST IN JUST 10 SECONDS' can be found at: https://mermaidindustries.itch.io/become-a-great-artist-in-just-10-seconds
+
+The code for the native version can be found at: https://codeberg.org/mcc/great-artist-ufo
 
 # Experimental Flags
 
